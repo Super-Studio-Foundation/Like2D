@@ -11,6 +11,7 @@ private:
     SDL_Renderer* renderer;
     bool running;
     std::string projectFolder;
+    const Uint8* keyboardState;
 
 public:
     Engine();
@@ -29,4 +30,5 @@ public:
     void setWindowSize(int width, int height);
     void setFullscreen(bool fullscreen);
     void getWindowSize(int& width, int& height) const;
+    bool isKeyDown(const std::string& keyName);
 };

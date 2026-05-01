@@ -63,11 +63,14 @@ int get_time(lua_State* L) {
     return 1;
 }
 
-int is_key_pressed(lua_State* L) {
-    int keycode = luaL_checkinteger(L, 1);
-    const bool* keyboardState = SDL_GetKeyboardState(NULL);
-    bool pressed = keyboardState[keycode];
-    lua_pushboolean(L, pressed);
+int is_key_down(lua_State* L) {
+    const char* keyName = luaL_checkstring(L, 1);
+    if (g_engine) {
+        bool pressed = g_engine->isKeyDown(keyName);
+        lua_pushboolean(L, pressed);
+    } else {
+        lua_pushboolean(L, false);
+    }
     return 1;
 }
 
@@ -156,7 +159,7 @@ void register_lua_functions(lua_State* L, Engine* engine, Renderer* renderer) {
         {"clearScreen", clear_screen},
         {"print", print_message},
         {"getTime", get_time},
-        {"isKeyPressed", is_key_pressed},
+        {"isKeyDown", is_key_down},
         {"loadImage", load_image},
         {"renderImage", render_image},
         {"loadFont", load_font},
