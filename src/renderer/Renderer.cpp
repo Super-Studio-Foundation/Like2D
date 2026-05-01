@@ -169,11 +169,10 @@ bool Renderer::drawText(const std::string& text, const std::string& fontKey, int
     auto it = fontCache.find(fontKey);
     if (it == fontCache.end()) return false;
     
-    const FontAtlas& atlas = it->second;
+    FontAtlas& atlas = it->second;
     if (!atlas.loaded || !atlas.texture) return false;
     
     SDL_SetTextureColorMod(atlas.texture, r, g, b);
-    SDL_SetTextureBlendMode(atlas.texture, SDL_BLENDMODE_BLEND);
     
     float currentX = (float)x;
     float currentY = (float)y;
@@ -370,7 +369,7 @@ bool Renderer::bakeFontAtlas(const std::string& fontPath, float fontSize, FontAt
         return false;
     }
     
-    // Skip blend mode setting to avoid SDL errors - alpha works fine without it
+    SDL_SetTextureBlendMode(atlas.texture, SDL_BLENDMODE_BLEND);
     
     atlas.loaded = true;
     return true;
