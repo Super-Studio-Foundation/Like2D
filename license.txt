@@ -1,0 +1,43 @@
+LICENSE AGREEMENT - LIKE2D FRAMEWORK
+Version 1.1.0
+SSOFoundation - International Edition
+
+Copyright (c) 2026 SSOFoundation (Rozak / SSOFoundation).
+All rights reserved.
+
+--------------------------------------------------------------------------------
+1. OVERVIEW
+--------------------------------------------------------------------------------
+Like2D is a modern, lightweight 2D game framework built with C++, SDL3, and 
+Luau scripting. This framework is developed and maintained by SSOFoundation.
+
+--------------------------------------------------------------------------------
+2. THIRD-PARTY LIBRARIES & LICENSES
+--------------------------------------------------------------------------------
+Like2D Framework utilizes the following open-source libraries:
+
+A. SDL3 (Simple DirectMedia Layer)
+   - License: Zlib License
+   - Copyright (c) 1997-2026 Sam Lantinga
+   - Website: https://www.libsdl.org/
+
+B. Luau (Roblox Scripting Language)
+   - License: MIT License
+   - Copyright (c) 2019-2026 Roblox Corporation
+   - Website: https://luau-lang.org/
+
+C. STB Image / STB Libraries
+   - License: Public Domain / MIT License
+   - Copyright (c) 2017 Sean Barrett
+   - Website: https://github.com/nothings/stb
+
+--------------------------------------------------------------------------------
+3. TERMS OF USE
+--------------------------------------------------------------------------------
+- You are free to use, modify, and distribute games made with Like2D.
+- Redistribution of the Like2D core (Like.dll) must include this license file.
+- The software is provided "AS IS", without warranty of any kind.
+
+--------------------------------------------------------------------------------
+SSOFoundation - Built for Performance and Simplicity.
+Author: Rozak
