@@ -126,6 +126,24 @@ int draw_text(lua_State* L) {
     return 1;
 }
 
+int draw_text_direct(lua_State* L) {
+    const char* text = luaL_checkstring(L, 1);
+    int x = luaL_checkinteger(L, 2);
+    int y = luaL_checkinteger(L, 3);
+    int size = luaL_checkinteger(L, 4);
+    int r = luaL_checkinteger(L, 5);
+    int g = luaL_checkinteger(L, 6);
+    int b = luaL_checkinteger(L, 7);
+    int a = luaL_optinteger(L, 8, 255);
+    if (g_renderer) {
+        bool success = g_renderer->drawTextDirect(text, x, y, size, r, g, b, a);
+        lua_pushboolean(L, success);
+    } else {
+        lua_pushboolean(L, false);
+    }
+    return 1;
+}
+
 void register_lua_functions(lua_State* L, Engine* engine, Renderer* renderer) {
     g_engine = engine;
     g_renderer = renderer;
@@ -143,6 +161,7 @@ void register_lua_functions(lua_State* L, Engine* engine, Renderer* renderer) {
         {"renderImage", render_image},
         {"loadFont", load_font},
         {"drawText", draw_text},
+        {"drawTextDirect", draw_text_direct},
         {NULL, NULL}
     };
     luaL_register(L, "_G", functions);
