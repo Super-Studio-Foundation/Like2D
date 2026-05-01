@@ -12,6 +12,8 @@ private:
     bool running;
     std::string projectFolder;
     const Uint8* keyboardState;
+    Uint32 lastTime;
+    float deltaTime;
 
 public:
     Engine();
@@ -31,4 +33,5 @@ public:
     void setFullscreen(bool fullscreen);
     void getWindowSize(int& width, int& height) const;
     bool isKeyDown(const std::string& keyName);
+    float getDeltaTime();
 };

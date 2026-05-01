@@ -164,66 +164,36 @@ bool Renderer::loadFont(const std::string& filename, int size) {
 }
 
 bool Renderer::drawText(const std::string& text, const std::string& fontKey, int x, int y, int r, int g, int b) {
-    // Validate renderer pointer
-    if (!renderer) {
-        std::string errorMsg = "Renderer pointer is null in drawText";
-        if (reportedErrors.insert(errorMsg).second) {
-            std::cerr << "ERROR: " << errorMsg << std::endl;
-        }
-        return false;
-    }
+    if (!renderer) return false;
     
     auto it = fontCache.find(fontKey);
-    if (it == fontCache.end()) {
-        std::string errorMsg = "Font not found in cache with key: '" + fontKey + "'";
-        if (reportedErrors.insert(errorMsg).second) {
-            std::cerr << "ERROR: " << errorMsg << std::endl;
-        }
-        return false;
-    }
+    if (it == fontCache.end()) return false;
     
     const FontAtlas& atlas = it->second;
-    if (!atlas.loaded || !atlas.texture) {
-        std::string errorMsg = "Font atlas not loaded for key: '" + fontKey + "'";
-        if (reportedErrors.insert(errorMsg).second) {
-            std::cerr << "ERROR: " << errorMsg << std::endl;
-        }
-        return false;
-    }
+    if (!atlas.loaded || !atlas.texture) return false;
     
-    // Set texture color modulation and blend mode (only if atlas is valid)
-    if (atlas.texture) {
-        SDL_SetTextureColorMod(atlas.texture, r, g, b);
-        SDL_SetTextureBlendMode(atlas.texture, SDL_BLENDMODE_BLEND);
-    }
+    SDL_SetTextureColorMod(atlas.texture, r, g, b);
+    SDL_SetTextureBlendMode(atlas.texture, SDL_BLENDMODE_BLEND);
     
     float currentX = (float)x;
     float currentY = (float)y;
     
     for (char c : text) {
-        // Skip characters outside our packed range (32-127)
-        if (c < 32 || c >= 127) {
-            continue;
-        }
+        if (c < 32 || c >= 127) continue;
         
         auto charIt = atlas.chars.find(c);
-        if (charIt == atlas.chars.end()) {
-            continue; // Skip unsupported characters
-        }
+        if (charIt == atlas.chars.end()) continue;
         
         const FontChar& fontChar = charIt->second;
         
-        // Manual calculation to avoid stbtt_GetPackedQuad corruption
         float charWidth = (float)(fontChar.packed.x1 - fontChar.packed.x0);
         float charHeight = (float)(fontChar.packed.y1 - fontChar.packed.y0);
         
-        // Skip empty characters
         if (charWidth <= 0 || charHeight <= 0) {
             currentX += (float)fontChar.packed.xadvance;
             continue;
         }
         
-        // Source rectangle from packed char data
         SDL_FRect srcRect = {
             (float)fontChar.packed.x0,
             (float)fontChar.packed.y0,
@@ -231,7 +201,6 @@ bool Renderer::drawText(const std::string& text, const std::string& fontKey, int
             charHeight
         };
         
-        // Destination rectangle with proper positioning
         float destX = currentX + (float)fontChar.packed.xoff;
         float destY = currentY + (float)fontChar.packed.yoff;
         
@@ -242,23 +211,10 @@ bool Renderer::drawText(const std::string& text, const std::string& fontKey, int
             charHeight
         };
         
-        // Validate rectangles before rendering
-        if (srcRect.w <= 0 || srcRect.h <= 0 || destRect.w <= 0 || destRect.h <= 0) {
-            currentX += (float)fontChar.packed.xadvance;
-            continue;
+        if (srcRect.w > 0 && srcRect.h > 0 && destRect.w > 0 && destRect.h > 0) {
+            SDL_RenderTexture(renderer, atlas.texture, &srcRect, &destRect);
         }
         
-        // Render the character
-        if (SDL_RenderTexture(renderer, atlas.texture, &srcRect, &destRect) != 0) {
-            // Only log errors occasionally to avoid spam
-            static int errorCount = 0;
-            if (errorCount < 10) {
-                std::cerr << "SDL_RenderTexture failed for character '" << c << "': " << SDL_GetError() << std::endl;
-                errorCount++;
-            }
-        }
-        
-        // Advance to next character
         currentX += (float)fontChar.packed.xadvance;
     }
     
@@ -421,13 +377,12 @@ bool Renderer::bakeFontAtlas(const std::string& fontPath, float fontSize, FontAt
 }
 
 bool Renderer::drawTextDirect(const std::string& text, int x, int y, int size, int r, int g, int b, int a) {
-    // Use a default font (Arial.ttf) for direct text rendering
+    if (!renderer) return false;
+    
     std::string fontKey = "Arial.ttf_" + std::to_string(size);
     
-    // Load font if not already loaded
     if (fontCache.find(fontKey) == fontCache.end()) {
         if (!loadFont("Arial.ttf", size)) {
-            // Font loading failed, but don't crash - just return false
             return false;
         }
     }

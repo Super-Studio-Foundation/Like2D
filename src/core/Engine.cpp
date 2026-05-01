@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <string>
 
-Engine::Engine() : window(nullptr), renderer(nullptr), running(false), keyboardState(nullptr) {}
+Engine::Engine() : window(nullptr), renderer(nullptr), running(false), keyboardState(nullptr), lastTime(0), deltaTime(0.0f) {}
 
 Engine::~Engine() {
     shutdown();
@@ -27,7 +27,7 @@ bool Engine::initialize(const std::string& title, int width, int height) {
         return false;
     }
     
-    renderer = SDL_CreateRenderer(window, NULL);
+    renderer = SDL_CreateRenderer(window, 0);
     if (!renderer) {
         std::cerr << "Failed to create renderer: " << SDL_GetError() << std::endl;
         SDL_DestroyWindow(window);
@@ -35,12 +35,21 @@ bool Engine::initialize(const std::string& title, int width, int height) {
         return false;
     }
     
+    SDL_SetRenderVSync(renderer, 1);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    
     running = true;
     return true;
 }
 
 void Engine::run(lua_State* L, Renderer* luaRenderer) {
+    lastTime = SDL_GetTicks();
+    
     while (running) {
+        Uint32 currentTime = SDL_GetTicks();
+        deltaTime = (currentTime - lastTime) / 1000.0f;
+        lastTime = currentTime;
+        
         SDL_PumpEvents();
         keyboardState = (const Uint8*)SDL_GetKeyboardState(NULL);
         
@@ -56,7 +65,7 @@ void Engine::run(lua_State* L, Renderer* luaRenderer) {
             }
         }
         
-        SDL_RenderClear(this->renderer);
+        SDL_RenderClear(renderer);
         
         lua_getglobal(L, "onDraw");
         if (lua_isfunction(L, -1)) {
@@ -68,8 +77,7 @@ void Engine::run(lua_State* L, Renderer* luaRenderer) {
             lua_pop(L, 1);
         }
         
-        SDL_RenderPresent(this->renderer);
-        SDL_Delay(16);
+        SDL_RenderPresent(renderer);
     }
 }
 
@@ -199,4 +207,8 @@ bool Engine::isKeyDown(const std::string& keyName) {
     }
     
     return false;
+}
+
+float Engine::getDeltaTime() {
+    return deltaTime;
 }

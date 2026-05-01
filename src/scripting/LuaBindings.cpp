@@ -48,6 +48,7 @@ int clear_screen(lua_State* L) {
     int b = luaL_checkinteger(L, 3);
     if (g_renderer) {
         g_renderer->setDrawColor(r, g, b);
+        g_renderer->clear();
     }
     return 0;
 }
@@ -60,6 +61,15 @@ int print_message(lua_State* L) {
 
 int get_time(lua_State* L) {
     lua_pushinteger(L, SDL_GetTicks());
+    return 1;
+}
+
+int get_delta_time(lua_State* L) {
+    if (g_engine) {
+        lua_pushnumber(L, g_engine->getDeltaTime());
+    } else {
+        lua_pushnumber(L, 0.0f);
+    }
     return 1;
 }
 
@@ -159,6 +169,7 @@ void register_lua_functions(lua_State* L, Engine* engine, Renderer* renderer) {
         {"clearScreen", clear_screen},
         {"print", print_message},
         {"getTime", get_time},
+        {"getDeltaTime", get_delta_time},
         {"isKeyDown", is_key_down},
         {"loadImage", load_image},
         {"renderImage", render_image},
