@@ -26,16 +26,32 @@ B. Luau (Roblox Scripting Language)
    - Copyright (c) 2019-2026 Roblox Corporation
    - Website: https://luau-lang.org/
 
-C. STB Image / STB Libraries
+C. Box2D v3 (Physics Engine)
+   - License: MIT License
+   - Copyright (c) 2021-2026 Erin Catto
+   - Website: https://box2d.org/
+
+D. STB Image / STB Libraries
    - License: Public Domain / MIT License
    - Copyright (c) 2017 Sean Barrett
    - Website: https://github.com/nothings/stb
+
+E. Miniaudio (Audio Library)
+   - License: Public Domain / MIT License
+   - Copyright (c) 2019-2026 David Reid
+   - Website: https://miniaud.io/
+
+F. miniz (Zlib-replacement Compression Library)
+   - License: MIT License
+   - Copyright (c) 2013-2014 Rich Geldreich / 2015-2026 miniz authors
+   - Website: https://github.com/richgel999/miniz
 
 --------------------------------------------------------------------------------
 3. TERMS OF USE
 --------------------------------------------------------------------------------
 - You are free to use, modify, and distribute games made with Like2D.
-- Redistribution of the Like2D core (Like.dll) must include this license file.
+- Redistribution of the Like2D core (Like.dll, SSOEngine) must include this license file.
+- Commercial use is permitted with proper attribution to SSOFoundation.
 - The software is provided "AS IS", without warranty of any kind.
 
 --------------------------------------------------------------------------------

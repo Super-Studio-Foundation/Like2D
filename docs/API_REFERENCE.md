@@ -54,139 +54,13 @@ setFullscreen(true)   -- Enable fullscreen
 setFullscreen(false)  -- Disable fullscreen
 ```
 
-## Rendering Functions
-
-### `clearScreen(red, green, blue)`
-Clears the screen with the specified RGB color.
+### `setEscapeQuits(escapeQuits)`
+Sets whether the Escape key should quit the application.
 
 **Parameters:**
-- `red` (integer): Red component (0-255)
-- `green` (integer): Green component (0-255)
-- `blue` (integer): Blue component (0-255)
+- `escapeQuits` (boolean): true to make Escape quit, false otherwise
 
-**Example:**
-```lua
-clearScreen(0, 0, 0)        -- Black
-clearScreen(255, 255, 255)  -- White
-clearScreen(100, 149, 237)  -- Cornflower blue
-```
-
-### `loadImage(key, filename)`
-Loads an image from file and stores it with the given key.
-
-**Parameters:**
-- `key` (string): Unique identifier for the image
-- `filename` (string): Path to the image file
-
-**Returns:**
-- `success` (boolean): true if loaded successfully, false otherwise
-
-**Example:**
-```lua
-if loadImage("player", "assets/player.png") then
-    print("Player image loaded successfully")
-else
-    print("Failed to load player image")
-end
-```
-
-### `renderImage(key, x, y, width, height)`
-Renders a previously loaded image at the specified position.
-
-**Parameters:**
-- `key` (string): The image key used when loading
-- `x` (integer): X position in pixels
-- `y` (integer): Y position in pixels
-- `width` (integer): Render width in pixels
-- `height` (integer): Render height in pixels
-
-**Returns:**
-- `success` (boolean): true if rendered successfully, false otherwise
-
-**Example:**
-```lua
-renderImage("player", 100, 200, 64, 64)
-```
-
-### `loadFont(key, filename, size)`
-Loads a font file for text rendering.
-
-**Parameters:**
-- `key` (string): Unique identifier for the font
-- `filename` (string): Path to the font file
-- `size` (integer): Font size in points
-
-**Returns:**
-- `success` (boolean): true if loaded successfully, false otherwise
-
-**Example:**
-```lua
-if loadFont("main", "fonts/arial.ttf", 24) then
-    print("Font loaded successfully")
-end
-```
-
-### `drawText(text, fontKey, x, y, red, green, blue)`
-Draws text at the specified position.
-
-**Parameters:**
-- `text` (string): The text to render
-- `fontKey` (string): The font key used when loading
-- `x` (integer): X position in pixels
-- `y` (integer): Y position in pixels
-- `red` (integer): Red color component (0-255)
-- `green` (integer): Green color component (0-255)
-- `blue` (integer): Blue color component (0-255)
-
-**Returns:**
-- `success` (boolean): true if rendered successfully, false otherwise
-
-**Example:**
-```lua
-drawText("Hello World!", "main", 10, 10, 255, 255, 255)
-drawText("Score: " .. score, "ui", 10, 50, 255, 255, 0)
-```
-
-## Input Functions
-
-### `isKeyPressed(keycode)`
-Checks if a specific key is currently pressed.
-
-**Parameters:**
-- `keycode` (integer): SDL key code constant
-
-**Returns:**
-- `pressed` (boolean): true if key is pressed, false otherwise
-
-**Common Key Codes:**
-```lua
-SDLK_ESCAPE      -- Escape key
-SDLK_SPACE       -- Space bar
-SDLK_RETURN      -- Enter key
-SDLK_UP          -- Up arrow
-SDLK_DOWN        -- Down arrow
-SDLK_LEFT        -- Left arrow
-SDLK_RIGHT       -- Right arrow
-SDLK_w           -- W key
-SDLK_a           -- A key
-SDLK_s           -- S key
-SDLK_d           -- D key
-SDLK_0 through SDLK_9  -- Number keys
-SDLK_a through SDLK_z  -- Letter keys
-```
-
-**Example:**
-```lua
-if isKeyPressed(SDLK_SPACE) then
-    player.jump()
-end
-
-if isKeyPressed(SDLK_RIGHT) then
-    player.x = player.x + 5
-end
-```
-
-## Utility Functions
+## Time Functions
 
 ### `getTime()`
 Gets the current time in milliseconds since application start.
@@ -203,6 +77,386 @@ lastTime = currentTime
 print("Frame time: " .. deltaTime .. "ms")
 ```
 
+### `getDeltaTime()`
+Gets the time elapsed since the last frame in seconds.
+
+**Returns:**
+- `deltaTime` (number): Time since last frame in seconds
+
+## Input Functions - Keyboard
+
+### `isKeyDown(keyName)`
+Checks if a specific key is currently held down.
+
+**Parameters:**
+- `keyName` (string): Name of the key (e.g., "Escape", "Space", "Return", "Up", "Down", "Left", "Right", "a", "b", etc.)
+
+**Returns:**
+- `held` (boolean): true if key is held down, false otherwise
+
+### `isKeyJustPressed(keyName)`
+Checks if a specific key was just pressed this frame.
+
+**Parameters:**
+- `keyName` (string): Name of the key
+
+**Returns:**
+- `pressed` (boolean): true if key was just pressed, false otherwise
+
+### `isKeyJustReleased(keyName)`
+Checks if a specific key was just released this frame.
+
+**Parameters:**
+- `keyName` (string): Name of the key
+
+**Returns:**
+- `released` (boolean): true if key was just released, false otherwise
+
+## Input Functions - Mouse
+
+### `isMousePressed(button)`
+Checks if a mouse button is currently pressed.
+
+**Parameters:**
+- `button` (integer): Mouse button (0 = left, 1 = right, 2 = middle)
+
+**Returns:**
+- `pressed` (boolean): true if button is pressed, false otherwise
+
+### `getMousePos()`
+Gets the current mouse position.
+
+**Returns:**
+- `x` (number): Mouse X position
+- `y` (number): Mouse Y position
+
+### `getMouseScroll()`
+Gets the mouse scroll delta since last frame.
+
+**Returns:**
+- `dx` (number): Horizontal scroll
+- `dy` (number): Vertical scroll
+
+## Rendering Functions - Screen and Images
+
+### `clearScreen(red, green, blue)`
+Clears the screen with the specified RGB color.
+
+**Parameters:**
+- `red` (integer): Red component (0-255)
+- `green` (integer): Green component (0-255)
+- `blue` (integer): Blue component (0-255)
+
+**Example:**
+```lua
+clearScreen(0, 0, 0)        -- Black
+clearScreen(255, 255, 255)  -- White
+clearScreen(100, 149, 237)  -- Cornflower blue
+```
+
+### `loadImage(filename)`
+Loads an image from file. The filename is used as the key.
+
+**Parameters:**
+- `filename` (string): Path to the image file
+
+**Returns:**
+- `success` (boolean): true if loaded successfully, false otherwise
+
+**Example:**
+```lua
+if loadImage("assets/player.png") then
+    print("Player image loaded successfully")
+else
+    print("Failed to load player image")
+end
+```
+
+### `renderImage(key, x, y, width, height)`
+Renders a previously loaded image at the specified position.
+
+**Parameters:**
+- `key` (string): The image key (usually the filename used when loading)
+- `x` (integer): X position in pixels
+- `y` (integer): Y position in pixels
+- `width` (integer): Render width in pixels
+- `height` (integer): Render height in pixels
+
+**Returns:**
+- `success` (boolean): true if rendered successfully, false otherwise
+
+**Example:**
+```lua
+renderImage("assets/player.png", 100, 200, 64, 64)
+```
+
+### `renderImageEx(key, x, y, width, height, angle, flipH, flipV, alpha, originX, originY)`
+Renders an image with advanced parameters.
+
+**Parameters:**
+- `key` (string): The image key
+- `x` (number): X position
+- `y` (number): Y position
+- `width` (number): Render width
+- `height` (number): Render height
+- `angle` (number): Rotation angle in degrees (optional, default = 0)
+- `flipH` (boolean): Flip horizontally (optional, default = false)
+- `flipV` (boolean): Flip vertically (optional, default = false)
+- `alpha` (number): Opacity from 0 to 1 (optional, default = 1)
+- `originX` (number): X origin as factor (0-1, 0.5 = center, optional, default = 0.5)
+- `originY` (number): Y origin as factor (0-1, 0.5 = center, optional, default = 0.5)
+
+### `renderImageRegion(key, destX, destY, destW, destH, srcX, srcY, srcW, srcH, angle, flipH, flipV, alpha, originX, originY)`
+Renders a sub-rectangle of an image.
+
+### `getImageSize(key)`
+Gets the dimensions of a loaded image.
+
+**Parameters:**
+- `key` (string): The image key
+
+**Returns:**
+- `width` (integer): Image width
+- `height` (integer): Image height
+
+## Rendering Functions - Primitives
+
+### `drawRect(x, y, w, h, r, g, b, a, filled, angle)`
+Draws a rectangle.
+
+**Parameters:**
+- `x` (number): X position
+- `y` (number): Y position
+- `w` (number): Width
+- `h` (number): Height
+- `r` (integer): Red (0-255)
+- `g` (integer): Green (0-255)
+- `b` (integer): Blue (0-255)
+- `a` (integer): Alpha (0-255, optional, default = 255)
+- `filled` (boolean): Fill the rectangle (optional, default = false)
+- `angle` (number): Rotation angle in degrees (optional, default = 0)
+
+### `drawLine(x1, y1, x2, y2, r, g, b, a)`
+Draws a line.
+
+### `drawCircle(cx, cy, radius, r, g, b, a, filled)`
+Draws a circle.
+
+## Rendering Functions - Text
+
+### `loadFont(filename, size)`
+Loads a font file for text rendering. The filename is used as the key.
+
+**Parameters:**
+- `filename` (string): Path to the font file
+- `size` (integer): Font size in points
+
+**Returns:**
+- `success` (boolean): true if loaded successfully, false otherwise
+
+**Example:**
+```lua
+if loadFont("fonts/arial.ttf", 24) then
+    print("Font loaded successfully")
+end
+```
+
+### `drawText(text, fontKey, x, y, red, green, blue)`
+Draws text using a loaded font.
+
+**Parameters:**
+- `text` (string): The text to render
+- `fontKey` (string): The font key (usually the filename used when loading)
+- `x` (integer): X position in pixels
+- `y` (integer): Y position in pixels
+- `red` (integer): Red color component (0-255)
+- `green` (integer): Green color component (0-255)
+- `blue` (integer): Blue color component (0-255)
+
+**Returns:**
+- `success` (boolean): true if rendered successfully, false otherwise
+
+**Example:**
+```lua
+drawText("Hello World!", "fonts/arial.ttf", 10, 10, 255, 255, 255)
+```
+
+### `drawTextDirect(text, x, y, size, red, green, blue, alpha)`
+Draws text without needing to preload a font (uses default font).
+
+**Parameters:**
+- `text` (string): The text to render
+- `x` (integer): X position in pixels
+- `y` (integer): Y position in pixels
+- `size` (integer): Font size in points
+- `red` (integer): Red color component (0-255)
+- `green` (integer): Green color component (0-255)
+- `blue` (integer): Blue color component (0-255)
+- `alpha` (integer): Alpha component (0-255, optional, default = 255)
+
+**Example:**
+```lua
+drawTextDirect("Hello World!", 10, 10, 24, 255, 255, 255, 255)
+```
+
+### `setDefaultFont(filename)`
+Sets the default font to use for `drawTextDirect`.
+
+## Camera Functions
+
+### `setCameraPosition(x, y)`
+Sets the camera position.
+
+### `getCameraPosition()`
+Gets the camera position.
+
+### `setCameraZoom(zoom)`
+Sets the camera zoom.
+
+### `getCameraZoom()`
+Gets the camera zoom.
+
+### `worldToScreen(x, y)`
+Converts world coordinates to screen coordinates.
+
+## Physics Functions - Bodies
+
+### `createBody(x, y, type, fixedRotation)`
+Creates a physics body.
+
+**Parameters:**
+- `x` (number): Initial X position
+- `y` (number): Initial Y position
+- `type` (string): Body type ("dynamic", "static", "kinematic", optional, default = "dynamic")
+- `fixedRotation` (boolean): Whether to lock rotation (optional, default = false)
+
+**Returns:**
+- `bodyIndex` (integer): Index of the created body
+
+### `destroyBody(index)`
+Destroys a physics body.
+
+### `setBodyPosition(index, x, y)`
+Sets a body's position.
+
+### `getBodyPosition(index)`
+Gets a body's position.
+
+### `getPhysicsTransform(index)`
+Gets a body's position and angle as a table with "x", "y", "angle" fields.
+
+### `setBodyVelocity(index, vx, vy)`
+Sets a body's velocity.
+
+### `getBodyVelocity(index)`
+Gets a body's velocity.
+
+### `applyForce(index, fx, fy)`
+Applies a force to a body.
+
+### `applyImpulse(index, ix, iy)`
+Applies an impulse to a body.
+
+### `setGravity(x, y)`
+Sets the world gravity.
+
+## Physics Functions - Shapes
+
+### `addBoxShape(bodyIndex, halfWidth, halfHeight, density, friction, restitution, isSensor)`
+Adds a box shape to a body.
+
+### `addCircleShape(bodyIndex, radius, density, friction, restitution, isSensor)`
+Adds a circle shape to a body.
+
+### `addCapsuleShape(bodyIndex, halfHeight, radius, density, friction)`
+Adds a capsule shape to a body.
+
+## Audio Functions
+
+### `loadSound(key, filename)`
+Loads a sound file.
+
+### `playSound(key, loop)`
+Plays a sound.
+
+### `stopSound(key)`
+Stops a sound.
+
+### `pauseSound(key)`
+Pauses a sound.
+
+### `resumeSound(key)`
+Resumes a sound.
+
+### `isSoundPlaying(key)`
+Checks if a sound is playing.
+
+### `setSoundVolume(key, volume)`
+Sets a sound's volume (0 to 1).
+
+### `setMasterVolume(volume)`
+Sets the master volume (0 to 1).
+
+### `setSoundPitch(key, pitch)`
+Sets a sound's pitch.
+
+### `unloadSound(key)`
+Unloads a sound.
+
+## JSON Functions
+
+### `json.load(filename)`
+Loads JSON data from a file.
+
+### `json.save(filename, data)`
+Saves a table to a JSON file.
+
+### `json.encode(data)`
+Encodes a table to a JSON string.
+
+### `json.decode(str)`
+Decodes a JSON string to a table.
+
+## Video Functions
+
+### `loadVideo(key, filename)`
+Loads a video file.
+
+### `updateVideo(key, deltaTime)`
+Updates video playback.
+
+### `renderVideo(key, x, y, width, height)`
+Renders a video.
+
+### `playVideo(key, loop)`
+Plays a video.
+
+### `pauseVideo(key)`
+Pauses a video.
+
+### `stopVideo(key)`
+Stops a video.
+
+### `seekVideo(key, seconds)`
+Seeks to a position in a video.
+
+### `isVideoPlaying(key)`
+Checks if a video is playing.
+
+### `isVideoEnded(key)`
+Checks if a video has ended.
+
+### `getVideoDuration(key)`
+Gets a video's total duration.
+
+### `getVideoTime(key)`
+Gets a video's current time.
+
+### `unloadVideo(key)`
+Unloads a video.
+
+## Utility Functions
+
 ### `print(message)`
 Outputs a message to the console (debug mode only).
 
@@ -215,6 +469,26 @@ Outputs a message to the console (debug mode only).
 ```lua
 print("Debug: Player position updated")
 print("Score: " .. score)
+```
+
+### `quit()`
+Quits the application.
+
+### `dofile(filename)`
+Loads and executes a Luau script file. This is used to split your code across multiple files.
+
+**Parameters:**
+- `filename` (string): Path to the script file (relative to the project root)
+
+**Example:**
+```lua
+-- In main.luau
+dofile("player.luau")
+dofile("scripts/utils.luau")
+
+function onInit()
+    player_init() -- function defined in player.luau
+end
 ```
 
 ## Callback Functions
@@ -234,10 +508,10 @@ function onInit()
     setWindowTitle("My Game")
     setWindowSize(800, 600)
     
-    loadImage("player", "assets/player.png")
-    loadImage("background", "assets/bg.jpg")
+    loadImage("assets/player.png")
+    loadImage("assets/bg.jpg")
     
-    loadFont("ui", "fonts/arial.ttf", 24)
+    loadFont("fonts/arial.ttf", 24)
     
     player.x = 400
     player.y = 300
@@ -261,21 +535,21 @@ function onDraw()
     clearScreen(50, 50, 50)
     
     -- Draw background
-    renderImage("background", 0, 0, 800, 600)
+    renderImage("assets/bg.jpg", 0, 0, 800, 600)
     
     -- Handle input
-    if isKeyPressed(SDLK_LEFT) then
+    if isKeyDown("Left") then
         player.x = player.x - 5
     end
-    if isKeyPressed(SDLK_RIGHT) then
+    if isKeyDown("Right") then
         player.x = player.x + 5
     end
     
     -- Draw player
-    renderImage("player", player.x, player.y, 64, 64)
+    renderImage("assets/player.png", player.x, player.y, 64, 64)
     
     -- Draw UI
-    drawText("Health: " .. player.health, "ui", 10, 10, 255, 255, 255)
+    drawTextDirect("Health: " .. player.health, 10, 10, 24, 255, 255, 255, 255)
 end
 ```
 
@@ -288,195 +562,6 @@ Called when the application is closing. Use this to:
 **Example:**
 ```lua
 function onCleanup()
-    -- Save high score
-    saveHighScore(score)
-    
-    -- Log shutdown
     print("Game shutting down...")
 end
 ```
-
-## Error Handling
-
-### Checking Return Values
-Many functions return boolean values indicating success. Always check these:
-
-```lua
--- Safe asset loading
-if not loadImage("texture", "assets/texture.png") then
-    print("Error: Failed to load texture")
-    return
-end
-
--- Safe font loading
-if not loadFont("font", "fonts/game.ttf", 32) then
-    print("Error: Failed to load font")
-    -- Use fallback font or handle error
-end
-```
-
-### Common Error Patterns
-
-```lua
--- Pattern 1: Asset loading with fallback
-local function loadAssetWithFallback(key, path, fallback)
-    if loadImage(key, path) then
-        return true
-    else
-        print("Warning: Failed to load " .. path .. ", using fallback")
-        return loadImage(key, fallback)
-    end
-end
-
--- Pattern 2: Safe rendering
-local function safeRenderImage(key, x, y, w, h)
-    if not renderImage(key, x, y, w, h) then
-        print("Error: Failed to render image " .. key)
-        -- Draw placeholder or skip
-    end
-end
-```
-
-## Performance Considerations
-
-### Asset Loading
-- Load all assets in `onInit()`, not in `onDraw()`
-- Use descriptive keys for easy debugging
-- Check return values for error handling
-
-### Rendering
-- Avoid loading assets during rendering
-- Minimize text rendering calls
-- Use appropriate image sizes
-
-### Input Handling
-- Check input state once per frame
-- Cache key states if needed multiple times
-
-## Complete Example
-
-```lua
--- main.luau - Complete game example
-
--- Game state
-local player = {
-    x = 400,
-    y = 300,
-    width = 64,
-    height = 64,
-    speed = 5,
-    color = {r = 255, g = 255, b = 255}
-}
-
-local game = {
-    score = 0,
-    running = true,
-    lastTime = 0
-}
-
-function onInit()
-    -- Setup window
-    setWindowTitle("Complete Example Game")
-    setWindowSize(800, 600)
-    
-    -- Load assets with error checking
-    if not loadImage("player", "assets/player.png") then
-        print("Warning: Using colored rectangle for player")
-    end
-    
-    if not loadFont("ui", "fonts/arial.ttf", 24) then
-        print("Error: Failed to load UI font")
-    end
-    
-    -- Initialize timing
-    game.lastTime = getTime()
-    
-    print("Game initialized successfully!")
-end
-
-function onDraw()
-    -- Calculate delta time
-    local currentTime = getTime()
-    local deltaTime = currentTime - game.lastTime
-    game.lastTime = currentTime
-    
-    -- Clear screen
-    clearScreen(30, 30, 40)
-    
-    -- Handle input
-    if isKeyPressed(SDLK_LEFT) then
-        player.x = player.x - player.speed
-    end
-    if isKeyPressed(SDLK_RIGHT) then
-        player.x = player.x + player.speed
-    end
-    if isKeyPressed(SDLK_UP) then
-        player.y = player.y - player.speed
-    end
-    if isKeyPressed(SDLK_DOWN) then
-        player.y = player.y + player.speed
-    end
-    
-    -- Keep player in bounds
-    player.x = math.max(0, math.min(800 - player.width, player.x))
-    player.y = math.max(0, math.min(600 - player.height, player.y))
-    
-    -- Render player (fallback to colored rectangle if image fails)
-    if not renderImage("player", player.x, player.y, player.width, player.height) then
-        -- Draw colored rectangle as fallback
-        clearScreen(player.color.r, player.color.g, player.color.b)
-    end
-    
-    -- Update score
-    game.score = game.score + 1
-    
-    -- Draw UI
-    drawText("Score: " .. game.score, "ui", 10, 10, 255, 255, 255)
-    drawText("Position: " .. math.floor(player.x) .. "," .. math.floor(player.y), "ui", 10, 40, 255, 255, 255)
-    drawText("FPS: " .. math.floor(1000 / deltaTime), "ui", 10, 70, 255, 255, 255)
-    
-    -- Exit on ESC
-    if isKeyPressed(SDLK_ESCAPE) then
-        game.running = false
-    end
-end
-
-function onCleanup()
-    print("Game ended. Final score: " .. game.score)
-end
-```
-
-## SDL Key Code Reference
-
-Here are the most commonly used SDL key codes:
-
-### Letters and Numbers
-- `SDLK_a` through `SDLK_z` - Alphabet keys
-- `SDLK_0` through `SDLK_9` - Number keys
-
-### Special Keys
-- `SDLK_SPACE` - Space bar
-- `SDLK_RETURN` - Enter/Return
-- `SDLK_ESCAPE` - Escape
-- `SDLK_TAB` - Tab
-- `SDLK_BACKSPACE` - Backspace
-- `SDLK_DELETE` - Delete
-
-### Arrow Keys
-- `SDLK_UP` - Up arrow
-- `SDLK_DOWN` - Down arrow
-- `SDLK_LEFT` - Left arrow
-- `SDLK_RIGHT` - Right arrow
-
-### Modifier Keys
-- `SDLK_LSHIFT` - Left Shift
-- `SDLK_RSHIFT` - Right Shift
-- `SDLK_LCTRL` - Left Control
-- `SDLK_RCTRL` - Right Control
-- `SDLK_LALT` - Left Alt
-- `SDLK_RALT` - Right Alt
-
-### Function Keys
-- `SDLK_F1` through `SDLK_F12` - Function keys
-
-For a complete list of SDL key codes, refer to the SDL3 documentation.

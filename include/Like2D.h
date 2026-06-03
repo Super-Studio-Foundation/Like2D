@@ -11,6 +11,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <string>
+#include <vector>
 #include <filesystem>
 
 // Forward declarations
@@ -27,6 +28,11 @@ namespace Like2D {
         bool initialize(int argc, char* argv[]);
         void run();
         void shutdown();
+
+        struct DofileState {
+            std::string projectFolder;
+            std::string exeDir;
+        };
         
     private:
         Engine* m_engine;
@@ -35,11 +41,21 @@ namespace Like2D {
         std::string m_projectFolder;
         std::string m_mainLuaPath;
         bool m_running;
+        std::vector<char> m_gameLikeZipData;  // cached decrypted zip bytes
+        
+        // Member variables instead of statics for per-instance state
+        std::vector<char> m_zipCache;          // per-instance game.like cache
+        std::string m_zipCachePath;            // per-instance game.like path
+        
+        DofileState m_dofileState;
+        void* m_dofileUpvalues;  // pointer to DofileUpvalues (for cleanup)
         
         bool parseArguments(int argc, char* argv[]);
         bool initializeSDL();
         bool initializeLua();
         bool loadScript();
+        bool loadFromGameLike(const std::filesystem::path& gameLikePath);
+        bool loadLuaFromGameLike(const std::filesystem::path& gameLikePath);
         void handleEvents();
         void update();
         void render();

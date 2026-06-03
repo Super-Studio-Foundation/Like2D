@@ -1,11 +1,12 @@
 # Source directory CMakeLists.txt
 
-# Collect source files
+# Collect source files (exclude main.cpp — it belongs only to the executable)
 file(GLOB_RECURSE SOURCES 
     "*.cpp"
     "*.hpp"
     "*.h"
 )
+list(FILTER SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
 
 # Create the main library
 add_library(Like2DCore STATIC ${SOURCES})

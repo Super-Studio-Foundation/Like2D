@@ -11,7 +11,7 @@ set RELEASE_NAME=Like2D.exe
 set DEBUG_NAME=LikeC.exe
 set DLL_NAME=Like.dll
 set BUILD_DIR=build
-set ENGINE_SOURCES=src\Like2D.cpp src\core\Engine.cpp src\renderer\Renderer.cpp src\scripting\LuaBindings.cpp
+set ENGINE_SOURCES=src\Like2D.cpp src\core\Engine.cpp src\renderer\Renderer.cpp src\scripting\LuaBindings.cpp src\compile\compiler.cpp src\audio\AudioManager.cpp external\miniz\miniz.c
 set LAUNCHER_SOURCES=src\main.cpp
 set RESOURCE_FILE=resource.rc
 
@@ -19,15 +19,16 @@ set RESOURCE_FILE=resource.rc
 set SDL_DIR=external\SDL3\build
 set LUAU_DIR=external\Luau\build
 
-set INCLUDES=-Iinclude -Iexternal\SDL3\include -Iexternal\Luau\VM\include -Iexternal\Luau\Compiler\include -Iexternal\Luau\Ast\include -Iexternal\Luau\Config\include -Iexternal\Luau\Common\include -Isrc
-set LIB_PATHS=-L"%SDL_DIR%" -L"%LUAU_DIR%" -L"%BUILD_DIR%"
+set INCLUDES=-Iinclude -Iexternal\SDL3\include -Iexternal\Luau\VM\include -Iexternal\Luau\Compiler\include -Iexternal\Luau\Ast\include -Iexternal\Luau\Config\include -Iexternal\Luau\Common\include -Iexternal\box2d\include -Iexternal\miniaudio -Iexternal\nlohmann -Iexternal\pl_mpeg -Isrc
+set LIB_PATHS=-L"%SDL_DIR%" -L"%LUAU_DIR%" -L"external\lib" -L"%BUILD_DIR%"
 
 :: Libraries for dynamic linking to SDL3.dll
-set LIBS=-lSDL3 -lLuau.Compiler -lLuau.VM -lLuau.Ast -lLuau.Bytecode -lLuau.Common -lgdi32 -luser32 -lkernel32 -lwinmm -lole32 -loleaut32 -lsetupapi -lversion -luuid
+set LIBS=-lSDL3 -lLuau.Compiler -lLuau.VM -lLuau.Ast -lLuau.Bytecode -lLuau.Common -lbox2d -lgdi32 -luser32 -lkernel32 -lwinmm -lole32 -loleaut32 -lsetupapi -lversion -luuid
 
 :: Compilation flags for performance and small size
 set CFLAGS=-std=c++20 -O2 -static-libgcc -static-libstdc++ -c
 set DLL_CFLAGS=-std=c++20 -O2 -static-libgcc -static-libstdc++ -c -DLIKE2D_EXPORTS
+set MONOLITHIC_CFLAGS=-std=c++20 -O2 -static-libgcc -static-libstdc++ -c -DLIKE2D_MONOLITHIC
 set DLL_LFLAGS=-Wl,-subsystem,windows -shared
 set RELEASE_LFLAGS=-Wl,-subsystem,windows
 set DEBUG_LFLAGS=-Wl,-subsystem,console
@@ -38,6 +39,9 @@ if "%1"=="dist" goto :dist
 if "%1"=="clean" goto :clean
 
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
+
+:: Delete old Like2D.exe to force relink with correct GUI subsystem
+if exist "%BUILD_DIR%\%RELEASE_NAME%" del /q "%BUILD_DIR%\%RELEASE_NAME%"
 
 echo [1/6] Checking dependencies...
 :: Auto-dependency check
@@ -169,6 +173,10 @@ for %%S in (%LAUNCHER_SOURCES%) do (
 set NEED_RELEASE_LINK=0
 set NEED_DEBUG_LINK=0
 
+:: Always force relink of Like2D.exe to guarantee correct subsystem
+:: (incremental skip could leave an old console-subsystem binary)
+set NEED_RELEASE_LINK=1
+
 if exist "%BUILD_DIR%\%RELEASE_NAME%" (
     if %NEED_EXE_LINK%==0 (
         for %%F in ("%BUILD_DIR%\%DLL_NAME%") do set DLL_TIME=%%~tF
@@ -275,18 +283,32 @@ set DIST_DIR=Like2D-Dist
 if exist "%DIST_DIR%" rmdir /s /q "%DIST_DIR%"
 mkdir "%DIST_DIR%"
 
-:: Copy executables and DLL
-copy "%BUILD_DIR%\%RELEASE_NAME%" "%DIST_DIR%\" >nul
-copy "%BUILD_DIR%\%DEBUG_NAME%" "%DIST_DIR%\" >nul
-copy "%BUILD_DIR%\%DLL_NAME%" "%DIST_DIR%\" >nul
+:: Copy everything from build directory except .o files
+echo   Copying build files...
+xcopy "%BUILD_DIR%\*.exe" "%DIST_DIR%\" /Q >nul
+xcopy "%BUILD_DIR%\*.dll" "%DIST_DIR%\" /Q >nul
+xcopy "%BUILD_DIR%\*.rc" "%DIST_DIR%\" /Q >nul
+xcopy "%BUILD_DIR%\scripts" "%DIST_DIR%\scripts\" /E /I /Q >nul
+
+echo   Cleaning object files...
+del /q "%DIST_DIR%\*.o" 2>nul
+
+:: Copy SDL3.dll if available
 copy "%SDL_DIR%\SDL3.dll" "%DIST_DIR%\" >nul 2>nul
 
 :: Copy sample scripts
 if exist "scripts" xcopy "scripts" "%DIST_DIR%\scripts\" /E /I /Q >nul
 
+:: Copy documentation and project files
+if exist "docs" xcopy "docs" "%DIST_DIR%\docs\" /E /I /Q >nul
+if exist "CREDITS.md" copy "CREDITS.md" "%DIST_DIR%\" >nul
+if exist "CONTRIBUTING.md" copy "CONTRIBUTING.md" "%DIST_DIR%\" >nul
+if exist "contributors.txt" copy "contributors.txt" "%DIST_DIR%\" >nul
+
 :: Copy license and updates files
 if exist "license.txt" copy "license.txt" "%DIST_DIR%\" >nul
 if exist "updates.txt" copy "updates.txt" "%DIST_DIR%\" >nul
+if exist "README.md" copy "README.md" "%DIST_DIR%\" >nul
 
 echo Distribution package created in %DIST_DIR% folder.
 goto :end
