@@ -6,6 +6,11 @@
 **/obj/
 **/dist/
 
+# Ignore heavy external sources (now handled by FetchContent)
+external/SDL3/
+external/Luau/
+external/box2d/
+
 # Private Folders
 LikeEdit/
 
