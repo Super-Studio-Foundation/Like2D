@@ -1,27 +1,41 @@
-# Global Ignores
-.vs/
-.vscode/
-bin/
-obj/
-dist/
-Like2D-Dist/
+# Global Blacklist (Blokir total folder build di mana pun)
+**/build/
+**/debug/
+**/release/
+**/bin/
+**/obj/
+**/dist/
+
+# Private Folders
 LikeEdit/
 
-# Specific Build Folder Ignores
-# Kita nggak abaikan foldernya, tapi file hasil buildnya aja
-build/*.o
-build/*.exe
-build/*.dll
-build/*.so
-build/*.a
-build/*.rc
-build/*.log
+# File types raksasa
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.pdb
+*.o
+*.obj
+*.ilk
+*.exp
 
-# Compiled artifacts
+# Asset yang biasanya kegedean (pilih kalau emang males pake LFS)
+*.mp4
+*.mkv
+*.wav
+*.psd
+*.zip
+*.7z
+
+# IDE
+.vs/
+.vscode/
+
+# Like2D specific
 compiled/
 *.like
-
-# Logs
 build_log.txt
 
 # OS
