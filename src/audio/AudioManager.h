@@ -21,9 +21,12 @@ public:
     bool initialize();
     void shutdown();
 
-    // Load a sound from disk or game.like archive
+    // Load a sound from disk or archive
     bool loadSound(const std::string& key, const std::string& filename);
-    bool loadSoundFromGameLike(const std::string& key, const std::string& filename);
+    bool loadSoundFromArchive(const std::string& key, const std::string& filename, const std::vector<char>& zipData);
+    bool initSoundFromFile(const std::string& key, const std::string& path);
+
+    void setProjectFolder(const std::string& folder) { m_projectFolder = folder; }
 
     // Playback
     bool playSound(const std::string& key, bool loop = false);
@@ -48,6 +51,7 @@ public:
 private:
     ma_engine m_engine;
     bool      m_initialized = false;
+    std::string m_projectFolder;
 
     std::unordered_map<std::string, SoundEntry*> m_sounds;
     std::vector<std::string>                      m_tempFiles; // paths to delete on shutdown

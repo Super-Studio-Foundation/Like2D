@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include <map>
 #include <string>
 #include <unordered_set>
@@ -24,6 +25,9 @@ struct FontAtlas {
     int width, height;
     std::map<char, FontChar> chars;
     float fontSize;
+    float ascent;     // pixels from baseline to top of tallest glyph
+    float descent;    // pixels from baseline to bottom of lowest descender (positive = below)
+    float lineHeight; // total line spacing in pixels
     bool loaded;
 };
 
@@ -34,13 +38,16 @@ struct VideoState;
 class Renderer {
 private:
     SDL_Renderer* renderer;
-    std::map<std::string, SDL_Texture*>              textureCache;
-    std::map<std::string, FontAtlas>                 fontCache;
-    std::map<std::string, FontData>                  ttfFontCache;
-    std::map<std::string, std::unique_ptr<VideoState>> videoCache;
+    std::unordered_map<std::string, SDL_Texture*>          textureCache;
+    std::unordered_map<std::string, FontAtlas>             fontCache;
+    std::unordered_map<std::string, FontData>              ttfFontCache;
+    std::unordered_map<std::string, std::unique_ptr<VideoState>> videoCache;
     std::string projectFolder;
     std::unordered_set<std::string> reportedErrors;
     std::string m_defaultFontPath;
+
+    // Negative cache: remember files that don't exist to avoid repeated filesystem probes
+    std::unordered_set<std::string> m_failedPaths;
 
     bool bakeFontAtlas(const std::string& fontPath, float fontSize, FontAtlas& atlas);
     bool bakeFontAtlasFromMemory(const std::vector<unsigned char>& fontData, float fontSize, FontAtlas& atlas);
@@ -53,19 +60,31 @@ public:
 
     bool loadImage(const std::string& filename);
     bool loadImageFromGameLike(const std::string& filename);
+    bool loadImageFromEncryptedFile(const std::string& filename);
     bool renderImage(const std::string& key, int x, int y, int width, int height);
     bool renderImageEx(const std::string& key, float x, float y, float width, float height,
                        float angle, bool flipH, bool flipV, float alpha,
                        float originX, float originY);
+    bool renderImageExColor(const std::string& key, float x, float y, float width, float height,
+                            float angle, bool flipH, bool flipV, float alpha,
+                            float originX, float originY, int r, int g, int b);
     bool renderImageRegion(const std::string& key,
                            float dx, float dy, float dw, float dh,
                            float srcX, float srcY, float srcW, float srcH,
                            float angle, bool flipH, bool flipV, float alpha,
                            float originX, float originY);
     bool getImageSize(const std::string& key, int& w, int& h);
+
+    // ── TileMap API ────────────────────────────────────────────
+    bool drawTileMap(const std::string& tilesetKey,
+                     int tileW, int tileH, int cols, int rows,
+                     const std::vector<int>& tiles,
+                     float x, float y, float alpha);
+    void* getTextureHandle(const std::string& key);
     bool loadFont(const std::string& filename, int size);
     bool drawText(const std::string& text, const std::string& fontKey, int x, int y, int r, int g, int b);
-    bool drawTextDirect(const std::string& text, int x, int y, int size, int r, int g, int b, int a = 255);
+    bool drawTextDirect(const std::string& text, int x, int y, int size, int r, int g, int b, int a = 255, int anchor = 0);
+    bool getTextSize(const std::string& text, int size, int& outW, int& outH);
     void setDrawColor(int r, int g, int b, int a = 255);
     void clear();
     void setDefaultFont(const std::string& path);

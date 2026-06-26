@@ -26,31 +26,49 @@ Application::~Application() {
 }
 
 bool Application::initialize(int argc, char* argv[]) {
+    std::cout << "[init] parseArguments..." << std::endl;
     if (!parseArguments(argc, argv)) {
+        std::cerr << "[init] parseArguments FAILED" << std::endl;
         return false;
     }
+    std::cout << "[init] projectFolder = " << m_projectFolder << std::endl;
+    std::cout << "[init] mainLuaPath = " << m_mainLuaPath << std::endl;
     
+    std::cout << "[init] initializeSDL..." << std::endl;
     if (!initializeSDL()) {
+        std::cerr << "[init] initializeSDL FAILED" << std::endl;
         return false;
     }
     
     if (!m_engine || !m_renderer) {
-        std::cerr << "Engine or Renderer initialization failed" << std::endl;
+        std::cerr << "[init] Engine or Renderer is null" << std::endl;
         return false;
     }
     
+    std::cout << "[init] initializeLua..." << std::endl;
     if (!initializeLua()) {
+        std::cerr << "[init] initializeLua FAILED" << std::endl;
         return false;
     }
     
+    std::cout << "[init] loadScript..." << std::endl;
     if (!loadScript()) {
 #ifdef _WIN32
-        MessageBoxA(NULL, "Failed to load main.luau/main.lua. Please check if the game files are valid.", "Like2D Engine Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to load main.lua. Please check if the game files are valid.", "Error...", MB_OK | MB_ICONERROR);
 #endif
         return false;
     }
     
+    std::cout << "[init] All OK!" << std::endl;
     m_running = true;
+
+    // Enable hot reload in dev mode only
+    if (!m_isProduction && std::filesystem::exists(m_mainLuaPath)) {
+        m_lastModTime = std::filesystem::last_write_time(m_mainLuaPath);
+        m_hotReloadEnabled = true;
+        std::cout << "[init] Hot reload enabled — watching " << m_mainLuaPath << std::endl;
+    }
+
     return true;
 }
 
@@ -99,6 +117,7 @@ struct DofileUpvalues {
     Like2D::Application::DofileState* dofileState;
     std::vector<char>* zipCache;
     std::string* zipCachePath;
+    std::vector<std::pair<std::string, std::filesystem::file_time_type>>* watchedFiles;
 };
 
 static int like2d_dofile(lua_State* L) {
@@ -178,6 +197,20 @@ static int like2d_dofile(lua_State* L) {
             if (f.is_open()) {
                 std::ostringstream ss; ss << f.rdbuf();
                 code = ss.str();
+                // Track this file for hot reload
+                if (uv->watchedFiles) {
+                    std::string resolved = std::filesystem::absolute(p).string();
+                    auto& wf = *uv->watchedFiles;
+                    bool found = false;
+                    for (auto& entry : wf) {
+                        if (entry.first == resolved) { found = true; break; }
+                    }
+                    if (!found) {
+                        std::error_code rec;
+                        auto ft = std::filesystem::last_write_time(p, rec);
+                        wf.push_back({resolved, rec ? std::filesystem::file_time_type{} : ft});
+                    }
+                }
                 break;
             }
         }
@@ -213,12 +246,136 @@ bool Application::initializeLua() {
     luaL_openlibs(m_luaState);
     register_lua_functions(m_luaState, m_engine, m_renderer);
 
+    // Inject built-in Animation library (pure Lua, uses loadImage + renderImageRegion)
+    {
+        const char* animLib = R"LUA(
+local Animation = {}
+Animation.__index = Animation
+
+function loadAnimation(filename, frameWidth, frameHeight, frameCount, frameDuration)
+    assert(type(filename) == "string", "loadAnimation: filename must be a string")
+    assert(type(frameWidth) == "number" and frameWidth > 0, "loadAnimation: frameWidth must be > 0")
+    assert(type(frameHeight) == "number" and frameHeight > 0, "loadAnimation: frameHeight must be > 0")
+    assert(type(frameCount) == "number" and frameCount > 0, "loadAnimation: frameCount must be > 0")
+    frameDuration = frameDuration or 0.1
+
+    local ok = loadImage(filename)
+    if not ok then
+        print("loadAnimation: failed to load image '" .. filename .. "'")
+        return nil
+    end
+
+    local anim = setmetatable({}, Animation)
+    anim._filename = filename
+    anim._frameW = frameWidth
+    anim._frameH = frameHeight
+    anim._frameCount = frameCount
+    anim._frameDuration = frameDuration
+    anim._timer = 0
+    anim._currentFrame = 0
+    anim._playing = false
+    anim._looping = true
+    anim._pingpong = false
+    anim._reverse = false
+    anim._direction = 1
+    anim._speed = 1
+    anim._finished = false
+    anim._alpha = 1
+    return anim
+end
+
+function Animation:update(dt)
+    if not self._playing then return end
+    self._timer = self._timer + dt * self._speed
+    local elapsed = self._frameDuration
+    while self._timer >= elapsed do
+        self._timer = self._timer - elapsed
+        local next = self._currentFrame + self._direction
+        if next >= self._frameCount then
+            if self._pingpong then
+                self._direction = -1
+                self._currentFrame = self._frameCount - 2
+                if self._currentFrame < 0 then self._currentFrame = 0 end
+            elseif self._looping then
+                self._currentFrame = 0
+            else
+                self._currentFrame = self._frameCount - 1
+                self._playing = false
+                self._finished = true
+                return
+            end
+        elseif next < 0 then
+            if self._pingpong then
+                self._direction = 1
+                self._currentFrame = 1
+                if self._currentFrame >= self._frameCount then self._currentFrame = 0 end
+            elseif self._looping then
+                self._currentFrame = self._frameCount - 1
+            else
+                self._currentFrame = 0
+                self._playing = false
+                self._finished = true
+                return
+            end
+        else
+            self._currentFrame = next
+        end
+    end
+end
+
+function Animation:draw(x, y, w, h)
+    local sx = self._currentFrame * self._frameW
+    local dw = w or self._frameW
+    local dh = h or self._frameH
+    return renderImageRegion(
+        self._filename,
+        x, y, dw, dh,
+        sx, 0, self._frameW, self._frameH,
+        0, false, false, self._alpha, 0, 0
+    )
+end
+
+function Animation:drawEx(x, y, w, h, angle, flipH, flipV, alpha, ox, oy)
+    local sx = self._currentFrame * self._frameW
+    local dw = w or self._frameW
+    local dh = h or self._frameH
+    local a = alpha or self._alpha
+    return renderImageRegion(
+        self._filename,
+        x, y, dw, dh,
+        sx, 0, self._frameW, self._frameH,
+        angle or 0, flipH or false, flipV or false,
+        a, ox or 0, oy or 0
+    )
+end
+
+function Animation:play()       self._playing = true; self._finished = false end
+function Animation:pause()      self._playing = false end
+function Animation:resume()     self._playing = true end
+function Animation:stop()       self._playing = false; self._currentFrame = 0; self._timer = 0; self._direction = 1; self._finished = false end
+function Animation:reset()      self:stop() end
+function Animation:setFrame(n)  self._currentFrame = math.max(0, math.min(n, self._frameCount - 1)); self._timer = 0 end
+function Animation:isPlaying()  return self._playing end
+function Animation:isFinished() return self._finished end
+function Animation:getCurrentFrame() return self._currentFrame end
+function Animation:getFrameCount()   return self._frameCount end
+function Animation:setLooping(v)     self._looping = v end
+function Animation:setSpeed(s)       self._speed = s end
+function Animation:setPingPong(v)    self._pingpong = v end
+function Animation:setReverse(v)     self._reverse = v; self._direction = v and -1 or 1 end
+function Animation:setAlpha(a)       self._alpha = a end
+function Animation:setDuration(d)    self._frameDuration = d end
+)LUA";
+        std::string code(animLib);
+        execute_lua_code(m_luaState, code);
+    }
+
     // Register dofile with project folder + exe dir as upvalue
     m_dofileState.projectFolder = m_projectFolder;
     m_dofileState.exeDir        = getExeDir().string();
     
     // Store upvalues (will be freed in shutdown())
-    DofileUpvalues* uv = new DofileUpvalues{&m_dofileState, &m_zipCache, &m_zipCachePath};
+    DofileUpvalues* uv = new DofileUpvalues{&m_dofileState, &m_zipCache, &m_zipCachePath, &m_watchedDofileFiles};
     m_dofileUpvalues = uv;
 
     lua_pushlightuserdata(m_luaState, uv);
@@ -260,9 +417,11 @@ bool Application::loadScript() {
     
     if (std::filesystem::exists(gameLikePath)) {
         std::cout << "Production mode: Loading from game.like" << std::endl;
+        m_isProduction = true;
         return this->loadFromGameLike(gameLikePath);
     }
     
+    m_isProduction = false;
     std::cout << "Development mode: Loading from " << m_mainLuaPath << std::endl;
     std::string luaCode = read_file(m_mainLuaPath);
     if (luaCode.empty()) {
@@ -411,8 +570,118 @@ bool Application::loadLuaFromGameLike(const std::filesystem::path& gameLikePath)
 
 void Application::run() {
     if (m_engine && m_luaState && m_renderer) {
+        m_engine->setHotReloadChecker([this]() -> lua_State* {
+            return this->hotReload();
+        });
         m_engine->run(m_luaState, m_renderer);
     }
+}
+
+lua_State* Application::hotReload() {
+    if (!m_hotReloadEnabled) return nullptr;
+
+    m_hotReloadFrameCounter++;
+    // Check every 30 frames (~0.5s at 60fps) to avoid excessive I/O
+    if (m_hotReloadFrameCounter < 30) return nullptr;
+    m_hotReloadFrameCounter = 0;
+
+    std::error_code ec;
+    auto currentTime = std::filesystem::last_write_time(m_mainLuaPath, ec);
+    bool needsReload = false;
+    std::string changedFile;
+
+    if (!ec && currentTime != m_lastModTime) {
+        needsReload = true;
+        changedFile = m_mainLuaPath;
+    }
+
+    // Also check all dofile'd files for changes
+    if (!needsReload) {
+        for (auto& entry : m_watchedDofileFiles) {
+            auto ft = std::filesystem::last_write_time(entry.first, ec);
+            if (!ec && ft != entry.second) {
+                needsReload = true;
+                changedFile = entry.first;
+                break;
+            }
+        }
+    }
+
+    if (!needsReload) return nullptr;
+
+    std::cout << "[hot-reload] " << changedFile << " changed — reloading..." << std::endl;
+    m_lastModTime = currentTime;
+
+    // Call onCleanup on old state before destroying
+    if (m_luaState) {
+        lua_getglobal(m_luaState, "onCleanup");
+        if (lua_isfunction(m_luaState, -1)) {
+            if (lua_pcall(m_luaState, 0, 0, 0) != 0) {
+                std::cerr << "[hot-reload] onCleanup error: " << lua_tostring(m_luaState, -1) << std::endl;
+                lua_pop(m_luaState, 1);
+            }
+        } else {
+            lua_pop(m_luaState, 1);
+        }
+    }
+
+    // Close old Lua state
+    if (m_luaState) {
+        lua_close(m_luaState);
+        m_luaState = nullptr;
+    }
+
+    // Free old dofile upvalues
+    if (m_dofileUpvalues) {
+        delete (DofileUpvalues*)m_dofileUpvalues;
+        m_dofileUpvalues = nullptr;
+    }
+
+    // Clear watched dofile list — will be re-populated during re-execution
+    m_watchedDofileFiles.clear();
+
+    // Create fresh Lua state
+    if (!initializeLua()) {
+        std::cerr << "[hot-reload] Failed to re-initialize Lua!" << std::endl;
+        return nullptr;
+    }
+
+    // Re-read and execute main.luau
+    std::string luaCode = read_file(m_mainLuaPath);
+    if (luaCode.empty()) {
+        std::cerr << "[hot-reload] Failed to read " << m_mainLuaPath << " — keeping old state" << std::endl;
+        return nullptr;
+    }
+
+    if (!execute_lua_code(m_luaState, luaCode)) {
+        std::cerr << "[hot-reload] Failed to execute main.luau — script error (keeping running)" << std::endl;
+        // Don't return nullptr here — the new state exists, just has no user code
+        // Engine will call onInit which won't exist, so it's harmless
+        return m_luaState;
+    }
+
+    // Call onInit on the new state (Engine::run only calls it once at startup)
+    lua_getglobal(m_luaState, "onInit");
+    if (lua_isfunction(m_luaState, -1)) {
+        if (lua_pcall(m_luaState, 0, 0, 0) != 0) {
+            std::cerr << "[hot-reload] onInit error: " << lua_tostring(m_luaState, -1) << std::endl;
+            lua_pop(m_luaState, 1);
+        }
+    } else {
+        lua_pop(m_luaState, 1);
+    }
+
+    // Record fresh timestamps for all newly-watched dofile'd files
+    {
+        std::error_code rec;
+        for (auto& entry : m_watchedDofileFiles) {
+            auto ft = std::filesystem::last_write_time(entry.first, rec);
+            if (!rec) entry.second = ft;
+        }
+    }
+
+    std::cout << "[hot-reload] Reload complete!" << std::endl;
+    return m_luaState;
 }
 
 void Application::shutdown() {

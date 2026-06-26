@@ -1,23 +1,42 @@
-# Global Blacklist (Blokir total folder build di mana pun)
-**/build/
-**/debug/
-**/release/
-**/bin/
-**/obj/
-**/dist/
+# ── External Dependencies ──
+# Users must download SDL3, Luau, Box2D, miniaudio, etc. into external/ manually.
+# See docs/BUILD_SYSTEM.md for instructions.
+/external/
 
-# Ignore heavy external sources (now handled by FetchContent)
-external/SDL3/
-external/Luau/
-external/box2d/
+# ── Build Artifacts ──
+build/
+debug/
+release/
+bin/
+obj/
+dist/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.cache
 
-# Private Folders
-LikeEdit/
+# ── Compiled / Packaged Games ──
+compiled/
+*.like
+game.like
+build_log.txt
 
-# File types raksasa
+# ── User Data (runtime saves, configs) ──
+userdata/
+
+# ── Platform Executables & Libraries ──
 *.exe
 *.dll
 *.so
+*.dylib
 *.a
 *.lib
 *.pdb
@@ -25,24 +44,37 @@ LikeEdit/
 *.obj
 *.ilk
 *.exp
+*.idb
+*.manifest
 
-# Asset yang biasanya kegedean (pilih kalau emang males pake LFS)
+# ── Large Media (not suitable for version control) ──
 *.mp4
 *.mkv
+*.webm
 *.wav
+*.ogg
+*.mp3
+*.flac
 *.psd
+*.xcf
+*.sprite
 *.zip
 *.7z
+*.rar
+*.tar.gz
 
-# IDE
+# ── IDE & Editor ──
 .vs/
 .vscode/
-
-# Like2D specific
-compiled/
-*.like
-build_log.txt
-
-# OS
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ── Logs & Temp ──
+*.log
+*.tmp
+*.temp

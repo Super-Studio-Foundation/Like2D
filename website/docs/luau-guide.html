@@ -4,221 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Luau Guide - Like2D</title>
-    <link rel="icon" href="logo.ico">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            overflow-y: auto !important;
-            height: auto !important;
-            min-height: 100vh !important;
-        }
-        .doc-header {
-            background-color: var(--color-bg-card);
-            border-bottom: var(--border-width-thick) solid var(--color-border);
-            padding: 20px 40px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .doc-header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .doc-logo-area {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .doc-logo-text {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--color-kaplay-green);
-            text-shadow: 
-                -2px -2px 0 var(--color-border),  
-                 2px -2px 0 var(--color-border),
-                -2px  2px 0 var(--color-border),
-                 2px  2px 0 var(--color-border),
-                 4px  4px 0 var(--color-border);
-        }
-        .doc-nav {
-            display: flex;
-            gap: 12px;
-        }
-        .doc-layout {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            gap: 0;
-        }
-        .doc-sidebar {
-            background-color: var(--color-bg-card);
-            border-right: var(--border-width-thin) solid var(--color-border);
-            padding: 40px 20px;
-            position: sticky;
-            top: 84px;
-            height: calc(100vh - 84px);
-            overflow-y: auto;
-        }
-        .doc-sidebar-title {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 18px;
-            font-weight: 800;
-            margin-bottom: 20px;
-            color: var(--color-kaplay-yellow);
-        }
-        .doc-sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .doc-sidebar-link {
-            display: block;
-            padding: 10px 16px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: var(--color-text-primary);
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
-            transition: var(--transition-snappy);
-        }
-        .doc-sidebar-link:hover {
-            background-color: var(--color-bg-card-dark);
-        }
-        .doc-sidebar-link.active {
-            background-color: var(--color-bg-card-dark);
-            color: var(--color-kaplay-green);
-            border: var(--border-width-thin) solid var(--color-border);
-        }
-        .doc-content {
-            padding: 40px;
-            background-color: var(--color-bg-main);
-        }
-        .doc-back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 32px;
-        }
-        .doc-h1 {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 48px;
-            font-weight: 900;
-            color: var(--color-kaplay-yellow);
-            text-shadow: 
-                -2px -2px 0 var(--color-border),  
-                 2px -2px 0 var(--color-border),
-                -2px  2px 0 var(--color-border),
-                 2px  2px 0 var(--color-border),
-                 4px  4px 0 var(--color-border);
-            margin-bottom: 32px;
-        }
-        .doc-h2 {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 32px;
-            font-weight: 800;
-            margin: 48px 0 20px;
-            color: var(--color-kaplay-purple);
-        }
-        .doc-h3 {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 36px 0 16px;
-            color: var(--color-kaplay-pink);
-        }
-        .doc-p {
-            font-family: 'Outfit', sans-serif;
-            font-size: 17px;
-            color: var(--color-text-secondary);
-            line-height: 1.8;
-            margin-bottom: 16px;
-        }
-        .doc-code {
-            background-color: var(--color-bg-card);
-            padding: 4px 10px;
-            border-radius: 8px;
-            color: var(--color-kaplay-yellow);
-            font-family: 'Courier New', monospace;
-            font-size: 15px;
-        }
-        .doc-pre {
-            background-color: var(--color-bg-card-dark);
-            border: var(--border-width-thin) solid var(--color-border);
-            border-radius: 16px;
-            padding: 24px;
-            margin: 20px 0;
-            overflow-x: auto;
-            box-shadow: var(--shadow-flat-small);
-            position: relative;
-        }
-        .doc-pre code {
-            color: var(--color-text-primary);
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .doc-ul, .doc-ol {
-            font-family: 'Outfit', sans-serif;
-            color: var(--color-text-secondary);
-            font-size: 17px;
-            line-height: 1.8;
-            margin-left: 24px;
-            margin-bottom: 16px;
-        }
-        .doc-ul li, .doc-ol li {
-            margin-bottom: 10px;
-        }
-        .doc-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background-color: var(--color-bg-card);
-            border: var(--border-width-thin) solid var(--color-border);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow-flat-small);
-        }
-        .doc-table th, .doc-table td {
-            padding: 16px;
-            text-align: left;
-            border-bottom: var(--border-width-thin) solid var(--color-border);
-        }
-        .doc-table th {
-            background-color: var(--color-bg-card-dark);
-            font-family: 'Fredoka', sans-serif;
-            font-weight: 800;
-            color: var(--color-kaplay-green);
-        }
-        .doc-table td {
-            font-family: 'Outfit', sans-serif;
-            color: var(--color-text-secondary);
-        }
-        .doc-link {
-            color: var(--color-kaplay-blue);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .doc-link:hover {
-            color: var(--color-kaplay-light-blue);
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
 </head>
 <body>
     <header class="doc-header">
         <div class="doc-header-content">
             <div class="doc-logo-area">
-                <img src="logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
                 <span class="doc-logo-text">Like2D</span>
             </div>
             <nav class="doc-nav">
-                <a href="index.html" class="btn btn-secondary">Home</a>
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
             </nav>
         </div>
     </header>
@@ -227,25 +26,32 @@
         <aside class="doc-sidebar">
             <h3 class="doc-sidebar-title">Documentation</h3>
             <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
                 <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
-                <a href="api-reference.html" class="doc-sidebar-link">API Reference</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
                 <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
                 <a href="luau-guide.html" class="doc-sidebar-link active">Luau Guide</a>
-                <a href="advanced-api.html" class="doc-sidebar-link">Advanced API</a>
             </nav>
         </aside>
 
         <main class="doc-content">
-            <a href="index.html" class="doc-back-btn btn btn-secondary">← Back to Home</a>
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
             
             <h1 class="doc-h1">Luau Guide</h1>
 
-            <h2 class="doc-h2">What is Luau?</h2>
+            <h2 class="doc-h2" id="what-is-luau">What is Luau?</h2>
             <p class="doc-p">
                 Luau is a fast, small, safe, gradually typed embeddable scripting language derived from Lua. It's developed by Roblox and used in Like2D for game scripting.
             </p>
 
-            <h2 class="doc-h2">Getting Started with Luau</h2>
+            <h2 class="doc-h2" id="getting-started-luau">Getting Started with Luau</h2>
 
             <h3 class="doc-h3">Hello World</h3>
             <pre class="doc-pre"><code>print("Hello, Like2D!")</code></pre>
@@ -440,7 +246,7 @@ table.sort(t)  -- t becomes {1, 1, 3, 4, 5, 6}
 -- Get length
 print(#t)  -- 6</code></pre>
 
-            <h2 class="doc-h2">Luau in Like2D</h2>
+            <h2 class="doc-h2" id="luau-in-like2d">Luau in Like2D</h2>
             <p class="doc-p">In Like2D, you write your game logic in Luau. The framework provides callback functions that you implement and a special function for including other files:</p>
 
             <h3 class="doc-h3">Including Other Files (<code class="doc-code">dofile</code>)</h3>
@@ -451,49 +257,68 @@ dofile("scripts/utils.luau")</code></pre>
             <p class="doc-p"><strong style="color: var(--color-kaplay-orange);">Note:</strong> This is much better than having a single 5,000-line file!</p>
 
             <h3 class="doc-h3">Callback Functions</h3>
-            <pre class="doc-pre"><code>-- Called once at startup
+            <p class="doc-p">Like2D calls these global functions automatically. Implement them in your <code class="doc-code">main.luau</code>:</p>
+            <pre class="doc-pre"><code>-- Called once at startup — load assets and set up state
 function onInit()
     setWindowTitle("My Game")
     setWindowSize(800, 600)
-    loadImage("player", "assets/player.png")
+    loadImage("assets/player.png")
+    loadSound("bgm", "assets/music.mp3")
+    playSound("bgm", true)
 end
 
--- Called every frame
+-- Called every frame BEFORE onDraw() — game logic, input, physics
+function onUpdate(dt)
+    -- dt = seconds since last frame (~0.016 at 60 FPS)
+    if isKeyDown("Right") then
+        playerX = playerX + 200 * dt
+    end
+end
+
+-- Called every frame for rendering — draw everything here
 function onDraw()
     clearScreen(20, 20, 30)
-    renderImage("player", 400, 300, 64, 64)
+    renderImage("assets/player.png", playerX, playerY, 64, 64)
+    drawTextDirect("Score: " .. score, 10, 10, 24, 255, 255, 255, 255)
 end
 
--- Called when closing
+-- Called once when closing — cleanup and save
 function onCleanup()
+    unloadSound("bgm")
     print("Game ended")
 end</code></pre>
 
-            <h2 class="doc-h2">Best Practices</h2>
+            <h2 class="doc-h2" id="best-practices">Best Practices</h2>
             <ul class="doc-ul">
                 <li>Use <code class="doc-code">local</code> variables whenever possible (faster and safer)</li>
-                <li>Load assets in <code class="doc-code">onInit()</code>, not in <code class="doc-code">onDraw()</code></li>
+                <li>Load assets in <code class="doc-code">onInit()</code>, never in <code class="doc-code">onDraw()</code> or <code class="doc-code">onUpdate()</code></li>
+                <li>Put game logic and input in <code class="doc-code">onUpdate(dt)</code>, rendering in <code class="doc-code">onDraw()</code></li>
+                <li>Use <code class="doc-code">dt</code> (delta time) for all movement to ensure smooth, frame-rate-independent gameplay</li>
+                <li>Unload sounds in <code class="doc-code">onCleanup()</code> to prevent memory leaks</li>
                 <li>Use meaningful variable and function names</li>
                 <li>Comment your code for clarity</li>
                 <li>Keep functions small and focused</li>
                 <li>Use tables to organize related data</li>
             </ul>
 
-            <h2 class="doc-h2">Learning More</h2>
+            <h2 class="doc-h2" id="learning-more">Learning More</h2>
             <ul class="doc-ul">
                 <li><a href="https://luau-lang.org/" target="_blank" class="doc-link">Official Luau Documentation</a></li>
                 <li><a href="https://www.lua.org/manual/5.1/" target="_blank" class="doc-link">Lua 5.1 Manual</a> (Luau is compatible with Lua 5.1)</li>
             </ul>
         </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
     </div>
     <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
         <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
-            <a href="license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
-            <a href="privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
-            <a href="terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
         </div>
         <p>&copy; 2025 Like2D. All rights reserved.</p>
     </footer>
-    <script src="script.js"></script>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
 </body>
 </html>

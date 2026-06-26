@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <fstream>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #ifdef _WIN32
 #include <windows.h>
@@ -17,6 +18,14 @@
 // pl_mpeg — MPEG-1 video decoder
 #define PL_MPEG_IMPLEMENTATION
 #include "../external/pl_mpeg/pl_mpeg.h"
+
+// ── Encryption constants (match compiler.cpp and LuaBindings.cpp) ──
+static const uint8_t ENC_MAGIC[] = { 'L', '2', 'D', 'E' };
+static const uint8_t XOR_KEY[] = {
+    0x4C, 0x69, 0x6B, 0x65, 0x32, 0x44, 0x53, 0x65,
+    0x63, 0x72, 0x65, 0x74, 0x4B, 0x65, 0x79, 0x21
+};
+static const size_t XOR_KEY_LEN = 16;
 
 // ── VideoState — defined here so pl_mpeg types are complete ──
 // Must be before Renderer constructor/destructor.
@@ -75,67 +84,179 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::loadImage(const std::string& filename) {
+    // Positive cache: already loaded
     auto it = textureCache.find(filename);
     if (it != textureCache.end()) {
         return it->second != nullptr;
     }
-    
-    char exePathBuf[MAX_PATH];
-    GetModuleFileNameA(NULL, exePathBuf, MAX_PATH);
-    std::filesystem::path exePath = std::filesystem::path(exePathBuf).parent_path();
-    std::filesystem::path gameLikePath = exePath / "game.like";
-    
-    if (std::filesystem::exists(gameLikePath)) {
-        if (loadImageFromGameLike(filename)) {
-            return true;
-        }
+
+    // Negative cache: already tried and failed
+    if (m_failedPaths.count(filename)) {
+        return false;
     }
+
+    // Try loading from encrypted file first
+    if (loadImageFromEncryptedFile(filename)) {
+        return true;
+    }
+
+    if (loadImageFromGameLike(filename)) {
+        return true;
+    }
+
+    // Build candidate search paths
+    std::vector<std::filesystem::path> candidates;
+    std::filesystem::path testPath(filename);
     
-    std::string fullPath;
-    if (!projectFolder.empty()) {
-        if (projectFolder.back() != '/' && projectFolder.back() != '\\') {
-            fullPath = projectFolder + "/" + filename;
-        } else {
-            fullPath = projectFolder + filename;
-        }
+    if (testPath.is_absolute()) {
+        candidates.push_back(testPath);
     } else {
-        fullPath = filename;
+        std::filesystem::path exeDir = getExeDir();
+        if (!projectFolder.empty()) {
+            candidates.push_back(std::filesystem::path(projectFolder) / filename);
+        }
+        candidates.push_back(exeDir / "userdata" / filename);
+        candidates.push_back(exeDir / filename);
+        candidates.push_back(std::filesystem::current_path() / filename);
     }
-    
-    // Debug output removed
+
+    std::filesystem::path foundPath;
+    for (const auto& p : candidates) {
+        std::error_code ec;
+        if (std::filesystem::exists(p, ec)) {
+            foundPath = p;
+            break;
+        }
+    }
+
+    if (foundPath.empty()) {
+        std::string err = "[loadImage] Failed to locate image: " + filename
+            + " | projectFolder=" + projectFolder
+            + " | checked " + std::to_string(candidates.size()) + " paths";
+        if (reportedErrors.insert(err).second) std::cerr << err << std::endl;
+        m_failedPaths.insert(filename);
+        return false;
+    }
+
     int width, height, channels;
-    unsigned char* data = stbi_load(fullPath.c_str(), &width, &height, &channels, 4);
-    
+    unsigned char* data = stbi_load(foundPath.string().c_str(), &width, &height, &channels, 4);
+
     if (!data) {
-        std::string errorMsg = "Failed to load image: " + fullPath + " - stb_image error";
-        if (reportedErrors.insert(errorMsg).second) {
-            std::cerr << errorMsg << std::endl;
-        }
+        const char* reason = stbi_failure_reason();
+        std::string errorMsg = "[loadImage] stbi_load failed: " + foundPath.string()
+            + " | reason: " + (reason ? reason : "unknown");
+        if (reportedErrors.insert(errorMsg).second) std::cerr << errorMsg << std::endl;
+        m_failedPaths.insert(filename);
         return false;
     }
-    
-    SDL_Surface* surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_RGBA32, data, width * 4);
-    if (!surface) {
-        std::string errorMsg = "Failed to create surface from image data: " + fullPath + " - " + SDL_GetError();
-        if (reportedErrors.insert(errorMsg).second) {
-            std::cerr << errorMsg << std::endl;
-        }
-        stbi_image_free(data);
-        return false;
-    }
-    
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_DestroySurface(surface);
-    stbi_image_free(data);
-    
+
+    // Create texture directly on GPU and upload pixel data (no surface needed)
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+                                              SDL_TEXTUREACCESS_STATIC, width, height);
     if (!texture) {
-        std::string errorMsg = "Failed to create texture: " + std::string(SDL_GetError());
-        if (reportedErrors.insert(errorMsg).second) {
-            std::cerr << errorMsg << std::endl;
-        }
+        std::cerr << "[loadImage] SDL_CreateTexture failed: " << SDL_GetError() << std::endl;
+        stbi_image_free(data);
+        m_failedPaths.insert(filename);
         return false;
     }
-    
+
+    int pitch = width * 4;
+    if (!SDL_UpdateTexture(texture, NULL, data, pitch)) {
+        std::cerr << "[loadImage] SDL_UpdateTexture failed: " << SDL_GetError() << std::endl;
+        SDL_DestroyTexture(texture);
+        stbi_image_free(data);
+        m_failedPaths.insert(filename);
+        return false;
+    }
+    stbi_image_free(data);
+
+    // Set blend mode once at load time, not per-draw
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    textureCache[filename] = texture;
+    return true;
+}
+
+bool Renderer::loadImageFromEncryptedFile(const std::string& filename) {
+    // Check cache first
+    auto it = textureCache.find(filename);
+    if (it != textureCache.end()) {
+        return it->second != nullptr;
+    }
+
+    // Build candidate paths efficiently (avoid redundant filesystem::exists)
+    std::vector<std::filesystem::path> candidates;
+
+    if (!projectFolder.empty()) {
+        std::string sep = (projectFolder.back() != '/' && projectFolder.back() != '\\') ? "/" : "";
+        candidates.push_back(projectFolder + sep + filename);
+    }
+    candidates.push_back(getExeDir() / "userdata" / filename);
+    candidates.push_back(getExeDir() / filename);
+    candidates.push_back(filename);
+
+    std::filesystem::path fullPath;
+    bool found = false;
+    for (const auto& c : candidates) {
+        if (std::filesystem::exists(c)) {
+            fullPath = c;
+            found = true;
+            break;
+        }
+    }
+    if (!found) return false;
+
+    // Read the file
+    std::ifstream file(fullPath, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return false;
+
+    std::streamsize size = file.tellg();
+    if (size < 4) { file.close(); return false; }
+
+    file.seekg(0, std::ios::beg);
+    std::vector<char> buffer(size);
+    if (!file.read(buffer.data(), size)) { file.close(); return false; }
+    file.close();
+
+    // Check for L2DE magic header
+    if ((uint8_t)buffer[0] != ENC_MAGIC[0] || (uint8_t)buffer[1] != ENC_MAGIC[1] ||
+        (uint8_t)buffer[2] != ENC_MAGIC[2] || (uint8_t)buffer[3] != ENC_MAGIC[3]) {
+        return false; // Not an encrypted file
+    }
+
+    // XOR decrypt
+    std::vector<char> decryptedData(buffer.begin() + 4, buffer.end());
+    for (size_t i = 0; i < decryptedData.size(); i++)
+        decryptedData[i] ^= (char)XOR_KEY[i % XOR_KEY_LEN];
+
+    int width, height, channels;
+    unsigned char* imgData = stbi_load_from_memory(
+        (unsigned char*)decryptedData.data(), (int)decryptedData.size(),
+        &width, &height, &channels, 4);
+
+    if (!imgData) {
+        std::string errorMsg = "Failed to load encrypted image: " + filename + " - stb_image error";
+        if (reportedErrors.insert(errorMsg).second) std::cerr << errorMsg << std::endl;
+        return false;
+    }
+
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+                                              SDL_TEXTUREACCESS_STATIC, width, height);
+    if (!texture) {
+        stbi_image_free(imgData);
+        return false;
+    }
+
+    int ePitch = width * 4;
+    if (!SDL_UpdateTexture(texture, NULL, imgData, ePitch)) {
+        SDL_DestroyTexture(texture);
+        stbi_image_free(imgData);
+        return false;
+    }
+    stbi_image_free(imgData);
+
+    if (!texture) return false;
+
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
     textureCache[filename] = texture;
     return true;
 }
@@ -167,7 +288,7 @@ bool Renderer::renderImage(const std::string& key, int x, int y, int width, int 
     
     SDL_FRect destRect = { (float)x, (float)y, (float)width, (float)height };
     
-    return SDL_RenderTexture(renderer, texture, NULL, &destRect) == 0;
+    return SDL_RenderTexture(renderer, texture, NULL, &destRect);
 }
 
 bool Renderer::loadFont(const std::string& filename, int size) {
@@ -179,28 +300,39 @@ bool Renderer::loadFont(const std::string& filename, int size) {
         return it->second.loaded;
     }
 
-    // Production mode: load from game.like
-    char exePathBuf[MAX_PATH];
-    GetModuleFileNameA(NULL, exePathBuf, MAX_PATH);
-    std::filesystem::path exePath = std::filesystem::path(exePathBuf).parent_path();
-    std::filesystem::path gameLikePath = exePath / "game.like";
-
-    if (std::filesystem::exists(gameLikePath)) {
-        if (loadFontFromGameLike(filename, size)) {
-            return true;
-        }
+    if (loadFontFromGameLike(filename, size)) {
+        return true;
     }
     
-    std::string fullPath;
-    if (!projectFolder.empty()) {
-        if (projectFolder.back() != '/' && projectFolder.back() != '\\') {
-            fullPath = projectFolder + "/" + filename;
-        } else {
-            fullPath = projectFolder + filename;
-        }
+    // Build candidate search paths
+    std::vector<std::filesystem::path> candidates;
+    std::filesystem::path testPath(filename);
+    
+    if (testPath.is_absolute()) {
+        candidates.push_back(testPath);
     } else {
-        fullPath = filename;
+        std::filesystem::path exePath = getExeDir();
+        if (!projectFolder.empty()) candidates.push_back(std::filesystem::path(projectFolder) / filename);
+        candidates.push_back(exePath / "userdata" / filename);
+        candidates.push_back(exePath / filename);
+        candidates.push_back(std::filesystem::current_path() / filename);
     }
+
+    std::filesystem::path foundPath;
+    for (const auto& p : candidates) {
+        if (std::filesystem::exists(p)) {
+            foundPath = p;
+            break;
+        }
+    }
+
+    if (foundPath.empty()) {
+        std::string err = "Font file not found: " + filename;
+        if (reportedErrors.insert(err).second) std::cerr << "ERROR: " << err << std::endl;
+        return false;
+    }
+    
+    std::string fullPath = foundPath.string();
     
     // Check if font file exists before trying to load
     std::ifstream testFile(fullPath);
@@ -252,7 +384,8 @@ bool Renderer::drawText(const std::string& text, const std::string& fontKey, int
     SDL_SetTextureColorMod(atlas.texture, r, g, b);
     
     float currentX = (float)x;
-    float currentY = (float)y;
+    // Adjust Y: y is the TOP of the text, shift to baseline by subtracting ascent
+    float baselineY = (float)y - atlas.ascent;
     
     for (char c : text) {
         if (c < 32 || c >= 127) continue;
@@ -278,7 +411,7 @@ bool Renderer::drawText(const std::string& text, const std::string& fontKey, int
         };
         
         float destX = currentX + (float)fontChar.packed.xoff;
-        float destY = currentY + (float)fontChar.packed.yoff;
+        float destY = baselineY + (float)fontChar.packed.yoff;
         
         SDL_FRect destRect = {
             destX,
@@ -294,6 +427,36 @@ bool Renderer::drawText(const std::string& text, const std::string& fontKey, int
         currentX += (float)fontChar.packed.xadvance;
     }
     
+    return true;
+}
+
+bool Renderer::getTextSize(const std::string& text, int size, int& outW, int& outH) {
+    if (!renderer) return false;
+
+    // Ensure font is loaded
+    std::string fontKey = m_defaultFontPath + "_" + std::to_string(size);
+    if (fontCache.find(fontKey) == fontCache.end()) {
+        if (!m_defaultFontPath.empty()) {
+            if (!loadFont(m_defaultFontPath, size)) return false;
+        } else {
+            return false;
+        }
+    }
+
+    FontAtlas& atlas = fontCache[fontKey];
+    if (!atlas.loaded) return false;
+
+    float totalAdvance = 0.0f;
+    for (char c : text) {
+        if (c < 32 || c >= 127) continue;
+        auto it = atlas.chars.find(c);
+        if (it != atlas.chars.end()) {
+            totalAdvance += it->second.packed.xadvance;
+        }
+    }
+
+    outW = (int)totalAdvance;
+    outH = (int)atlas.lineHeight;
     return true;
 }
 
@@ -384,7 +547,24 @@ bool Renderer::bakeFontAtlas(const std::string& fontPath, float fontSize, FontAt
     }
     
     stbtt_PackEnd(&packContext);
-    
+
+    // Compute font metrics (ascent, descent, lineHeight) for proper Y positioning
+    {
+        stbtt_fontinfo info;
+        if (stbtt_InitFont(&info, fontData.data(), stbtt_GetFontOffsetForIndex(fontData.data(), 0))) {
+            int a, d, lg;
+            stbtt_GetFontVMetrics(&info, &a, &d, &lg);
+            float scale = stbtt_ScaleForPixelHeight(&info, fontSize);
+            atlas.ascent     = (float)a * scale;
+            atlas.descent    = (float)(-d) * scale;   // make positive = below baseline
+            atlas.lineHeight = (float)(a - d + lg) * scale;
+        } else {
+            atlas.ascent = fontSize * 0.8f;
+            atlas.descent = fontSize * 0.2f;
+            atlas.lineHeight = fontSize * 1.2f;
+        }
+    }
+
     // Store character info with proper alignment data
     for (int i = 0; i < charCount; i++) {
         char c = firstChar + i;
@@ -452,18 +632,72 @@ bool Renderer::bakeFontAtlas(const std::string& fontPath, float fontSize, FontAt
     return true;
 }
 
-bool Renderer::drawTextDirect(const std::string& text, int x, int y, int size, int r, int g, int b, int a) {
+// Auto-detect a system font if no default font is set
+static std::string findSystemFont() {
+    // Common system font paths (Windows + Linux)
+    std::vector<std::string> candidates = {
+#ifdef _WIN32
+        "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/calibri.ttf",
+        "C:/Windows/Fonts/consola.ttf",
+        "C:/Windows/Fonts/verdana.ttf",
+#else
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf",
+#endif
+    };
+    for (const auto& path : candidates) {
+        std::ifstream f(path);
+        if (f.good()) return path;
+    }
+    return "";  // no system font found
+}
+
+bool Renderer::drawTextDirect(const std::string& text, int x, int y, int size, int r, int g, int b, int a, int anchor) {
     if (!renderer) return false;
-    if (m_defaultFontPath.empty()) return false;  // no default font set — fail silently
+
+    // Auto-detect system font if no default font set
+    if (m_defaultFontPath.empty()) {
+        std::string sysFont = findSystemFont();
+        if (sysFont.empty()) {
+            std::string msg = "drawTextDirect failed: no default font set and no system font found. Call setDefaultFont() with a .ttf path.";
+            if (reportedErrors.insert(msg).second)
+                std::cerr << "ERROR: " << msg << std::endl;
+            return false;
+        }
+        m_defaultFontPath = sysFont;
+    }
 
     std::string fontKey = m_defaultFontPath + "_" + std::to_string(size);
     
     if (fontCache.find(fontKey) == fontCache.end()) {
         if (!loadFont(m_defaultFontPath, size)) {
+            std::string msg = "drawTextDirect failed: could not load font '" + m_defaultFontPath + "'";
+            if (reportedErrors.insert(msg).second)
+                std::cerr << "ERROR: " << msg << std::endl;
             return false;
         }
     }
-    
+
+    // Anchor adjustment: 0=top-left 1=top-center 2=top-right
+    //                    3=mid-left  4=mid-center  5=mid-right
+    //                    6=bot-left  7=bot-center  8=bot-right
+    if (anchor != 0) {
+        int tw = 0, th = 0;
+        getTextSize(text, size, tw, th);
+        int hAlign = anchor % 3;  // 0=left, 1=center, 2=right
+        int vAlign = anchor / 3;  // 0=top,  1=mid,    2=bottom
+        if (hAlign == 1) x -= tw / 2;
+        if (hAlign == 2) x -= tw;
+        if (vAlign == 1) y -= th / 2;
+        if (vAlign == 2) y -= th;
+    }
+
     return drawText(text, fontKey, x, y, r, g, b);
 }
 
@@ -501,52 +735,58 @@ static std::vector<std::string> buildSearchPaths(const std::string& filename) {
     return paths;
 }
 
-bool Renderer::loadImageFromGameLike(const std::string& filename) {
-    char exePathBuf[MAX_PATH];
-    GetModuleFileNameA(NULL, exePathBuf, MAX_PATH);
-    std::filesystem::path exePath = std::filesystem::path(exePathBuf).parent_path();
-    std::filesystem::path gameLikePath = exePath / "game.like";
+static const uint8_t LIKE2D_ENC_MAGIC[] = { 'L', '2', 'D', 'E' };
+static const uint8_t LIKE2D_XOR_KEY[]   = {
+    0x4C, 0x69, 0x6B, 0x65, 0x32, 0x44, 0x53, 0x65,
+    0x63, 0x72, 0x65, 0x74, 0x4B, 0x65, 0x79, 0x21
+};
+static const size_t LIKE2D_XOR_KEY_LEN = sizeof(LIKE2D_XOR_KEY);
 
-    // ── Read + decrypt game.like (same logic as LuaBindings) ──
-    static const uint8_t ENC_MAGIC[] = { 'L', '2', 'D', 'E' };
-    static const uint8_t XOR_KEY[]   = {
-        0x4C, 0x69, 0x6B, 0x65, 0x32, 0x44, 0x53, 0x65,
-        0x63, 0x72, 0x65, 0x74, 0x4B, 0x65, 0x79, 0x21
-    };
-    static const size_t XOR_KEY_LEN = sizeof(XOR_KEY);
+// Shared helper to retrieve production archive data (consistent with LuaBindings)
+static bool getProductionArchive(std::vector<char>& outData, std::string& outPath) {
+    static std::vector<char> s_cache;
+    static std::string       s_cachePath;
 
-    // Use a static cache so we only decrypt once per process lifetime
-    static std::vector<char> s_zipCache;
-    static std::string       s_zipCachePath;
-    std::string pathStr = gameLikePath.string();
+    std::filesystem::path exeDir  = getExeDir();
+    std::filesystem::path exePath = getExePath();
+    std::filesystem::path gameLike = exeDir / "game.like";
 
-    if (s_zipCachePath != pathStr || s_zipCache.empty()) {
-        std::ifstream rf(gameLikePath, std::ios::binary);
-        if (!rf.is_open()) {
-            std::cerr << "ERROR: Cannot open game.like for image loading" << std::endl;
-            return false;
+    std::vector<std::filesystem::path> candidates = { gameLike, exePath };
+    for (const auto& p : candidates) {
+        if (!std::filesystem::exists(p)) continue;
+        std::string pStr = p.string();
+        if (s_cachePath == pStr && !s_cache.empty()) {
+            outData = s_cache; outPath = s_cachePath; return true;
         }
+        std::ifstream rf(p, std::ios::binary);
+        if (!rf.is_open()) continue;
         std::vector<char> raw((std::istreambuf_iterator<char>(rf)), {});
         rf.close();
-
         if (raw.size() >= 4 &&
-            (uint8_t)raw[0] == ENC_MAGIC[0] && (uint8_t)raw[1] == ENC_MAGIC[1] &&
-            (uint8_t)raw[2] == ENC_MAGIC[2] && (uint8_t)raw[3] == ENC_MAGIC[3])
+            (uint8_t)raw[0] == LIKE2D_ENC_MAGIC[0] && (uint8_t)raw[1] == LIKE2D_ENC_MAGIC[1] &&
+            (uint8_t)raw[2] == LIKE2D_ENC_MAGIC[2] && (uint8_t)raw[3] == LIKE2D_ENC_MAGIC[3]) 
         {
-            s_zipCache.assign(raw.begin() + 4, raw.end());
-            for (size_t i = 0; i < s_zipCache.size(); i++)
-                s_zipCache[i] ^= (char)XOR_KEY[i % XOR_KEY_LEN];
+            s_cache.assign(raw.begin() + 4, raw.end());
+            for (size_t i = 0; i < s_cache.size(); i++) s_cache[i] ^= (char)LIKE2D_XOR_KEY[i % LIKE2D_XOR_KEY_LEN];
+            s_cachePath = pStr;
         } else {
-            s_zipCache = std::move(raw);
+            mz_zip_archive zip = {};
+            if (mz_zip_reader_init_mem(&zip, raw.data(), raw.size(), 0)) {
+                mz_zip_reader_end(&zip); s_cache = std::move(raw); s_cachePath = pStr;
+            } else continue;
         }
-        s_zipCachePath = pathStr;
+        outData = s_cache; outPath = s_cachePath; return true;
     }
+    return false;
+}
+
+bool Renderer::loadImageFromGameLike(const std::string& filename) {
+    std::vector<char> zipData;
+    std::string       zipPath;
+    if (!getProductionArchive(zipData, zipPath)) return false;
 
     mz_zip_archive zip = {};
-    if (!mz_zip_reader_init_mem(&zip, s_zipCache.data(), s_zipCache.size(), 0)) {
-        std::cerr << "ERROR: Failed to open game.like archive for image loading" << std::endl;
-        return false;
-    }
+    if (!mz_zip_reader_init_mem(&zip, zipData.data(), zipData.size(), 0)) return false;
 
     for (const std::string& searchPath : buildSearchPaths(filename)) {
         int fileIndex = mz_zip_reader_locate_file(&zip, searchPath.c_str(), nullptr, 0);
@@ -562,24 +802,22 @@ bool Renderer::loadImageFromGameLike(const std::string& filename) {
         unsigned char* imageData = stbi_load_from_memory(fileData.data(), (int)stat.m_uncomp_size,
                                                           &width, &height, &channels, 4);
         if (imageData) {
-            SDL_Surface* surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_RGBA32,
-                                                          imageData, width * 4);
-            if (surface) {
-                SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-                SDL_DestroySurface(surface);
-                if (texture) {
+            SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+                                                      SDL_TEXTUREACCESS_STATIC, width, height);
+            if (texture) {
+                int gPitch = width * 4;
+                if (SDL_UpdateTexture(texture, NULL, imageData, gPitch)) {
                     SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
                     textureCache[filename] = texture;
                     stbi_image_free(imageData);
                     mz_zip_reader_end(&zip);
                     return true;
                 }
+                SDL_DestroyTexture(texture);
             }
             stbi_image_free(imageData);
         }
     }
-
-    std::cerr << "ERROR: Could not find image '" << filename << "' in game.like" << std::endl;
     mz_zip_reader_end(&zip);
     return false;
 }
@@ -587,45 +825,12 @@ bool Renderer::loadImageFromGameLike(const std::string& filename) {
 bool Renderer::loadFontFromGameLike(const std::string& filename, int size) {
     std::string fontKey = filename + "_" + std::to_string(size);
 
-    char exePathBuf[MAX_PATH];
-    GetModuleFileNameA(NULL, exePathBuf, MAX_PATH);
-    std::filesystem::path exePath = std::filesystem::path(exePathBuf).parent_path();
-    std::filesystem::path gameLikePath = exePath / "game.like";
-
-    // Reuse the same static decrypt cache as loadImageFromGameLike
-    static const uint8_t ENC_MAGIC[] = { 'L', '2', 'D', 'E' };
-    static const uint8_t XOR_KEY[]   = {
-        0x4C, 0x69, 0x6B, 0x65, 0x32, 0x44, 0x53, 0x65,
-        0x63, 0x72, 0x65, 0x74, 0x4B, 0x65, 0x79, 0x21
-    };
-    static const size_t XOR_KEY_LEN = sizeof(XOR_KEY);
-    static std::vector<char> s_zipCache;
-    static std::string       s_zipCachePath;
-    std::string pathStr = gameLikePath.string();
-
-    if (s_zipCachePath != pathStr || s_zipCache.empty()) {
-        std::ifstream rf(gameLikePath, std::ios::binary);
-        if (!rf.is_open()) return false;
-        std::vector<char> raw((std::istreambuf_iterator<char>(rf)), {});
-        rf.close();
-        if (raw.size() >= 4 &&
-            (uint8_t)raw[0] == ENC_MAGIC[0] && (uint8_t)raw[1] == ENC_MAGIC[1] &&
-            (uint8_t)raw[2] == ENC_MAGIC[2] && (uint8_t)raw[3] == ENC_MAGIC[3])
-        {
-            s_zipCache.assign(raw.begin() + 4, raw.end());
-            for (size_t i = 0; i < s_zipCache.size(); i++)
-                s_zipCache[i] ^= (char)XOR_KEY[i % XOR_KEY_LEN];
-        } else {
-            s_zipCache = std::move(raw);
-        }
-        s_zipCachePath = pathStr;
-    }
+    std::vector<char> zipData;
+    std::string       zipPath;
+    if (!getProductionArchive(zipData, zipPath)) return false;
 
     mz_zip_archive zip = {};
-    if (!mz_zip_reader_init_mem(&zip, s_zipCache.data(), s_zipCache.size(), 0)) {
-        std::cerr << "ERROR: Failed to open game.like for font loading" << std::endl;
-        return false;
-    }
+    if (!mz_zip_reader_init_mem(&zip, zipData.data(), zipData.size(), 0)) return false;
 
     for (const std::string& searchPath : buildSearchPaths(filename)) {
         int fileIndex = mz_zip_reader_locate_file(&zip, searchPath.c_str(), nullptr, 0);
@@ -649,17 +854,10 @@ bool Renderer::loadFontFromGameLike(const std::string& filename, int size) {
             fontCache[fontKey] = atlas;
             return true;
         }
-
-        std::string errorMsg = "Failed to bake font atlas from game.like: " + filename;
-        if (reportedErrors.insert(errorMsg).second)
-            std::cerr << "ERROR: " << errorMsg << std::endl;
         return false;
     }
 
     mz_zip_reader_end(&zip);
-    std::string errorMsg = "Font not found in game.like: " + filename;
-    if (reportedErrors.insert(errorMsg).second)
-        std::cerr << "ERROR: " << errorMsg << std::endl;
     return false;
 }
 
@@ -687,6 +885,23 @@ bool Renderer::bakeFontAtlasFromMemory(const std::vector<unsigned char>& fontDat
         return false;
     }
     stbtt_PackEnd(&packContext);
+
+    // Compute font metrics for proper Y positioning
+    {
+        stbtt_fontinfo info;
+        if (stbtt_InitFont(&info, fontData.data(), stbtt_GetFontOffsetForIndex(fontData.data(), 0))) {
+            int a, d, lg;
+            stbtt_GetFontVMetrics(&info, &a, &d, &lg);
+            float scale = stbtt_ScaleForPixelHeight(&info, fontSize);
+            atlas.ascent     = (float)a * scale;
+            atlas.descent    = (float)(-d) * scale;
+            atlas.lineHeight = (float)(a - d + lg) * scale;
+        } else {
+            atlas.ascent = fontSize * 0.8f;
+            atlas.descent = fontSize * 0.2f;
+            atlas.lineHeight = fontSize * 1.2f;
+        }
+    }
 
     for (int i = 0; i < charCount; i++) {
         char c = firstChar + i;
@@ -744,8 +959,9 @@ bool Renderer::renderImageEx(const std::string& key,
 
     SDL_Texture* texture = it->second;
 
-    SDL_SetTextureAlphaMod(texture, (Uint8)(alpha * 255.0f));
-    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    // Only set alpha mod if not fully opaque (avoid redundant state change)
+    bool hasAlpha = (alpha < 0.999f);
+    if (hasAlpha) SDL_SetTextureAlphaMod(texture, (Uint8)(alpha * 255.0f));
 
     SDL_FRect destRect = { x, y, width, height };
     SDL_FPoint center  = { originX * width, originY * height };
@@ -755,10 +971,42 @@ bool Renderer::renderImageEx(const std::string& key,
     else if (flipH)     flip = SDL_FLIP_HORIZONTAL;
     else if (flipV)     flip = SDL_FLIP_VERTICAL;
 
-    bool ok = SDL_RenderTextureRotated(renderer, texture, NULL, &destRect, angle, &center, flip) == 0;
+    bool ok = SDL_RenderTextureRotated(renderer, texture, NULL, &destRect, angle, &center, flip);
 
-    // Restore full alpha so other renders aren't affected
-    SDL_SetTextureAlphaMod(texture, 255);
+    if (hasAlpha) SDL_SetTextureAlphaMod(texture, 255);
+    return ok;
+}
+
+// ---- renderImageExColor: same as renderImageEx + color modulation ----
+bool Renderer::renderImageExColor(const std::string& key,
+                                   float x, float y, float width, float height,
+                                   float angle, bool flipH, bool flipV,
+                                   float alpha, float originX, float originY,
+                                   int r, int g, int b) {
+    if (!renderer) return false;
+
+    auto it = textureCache.find(key);
+    if (it == textureCache.end() || !it->second) return false;
+
+    SDL_Texture* texture = it->second;
+
+    bool hasAlpha = (alpha < 0.999f);
+    bool hasColor = (r != 255 || g != 255 || b != 255);
+    if (hasAlpha) SDL_SetTextureAlphaMod(texture, (Uint8)(alpha * 255.0f));
+    if (hasColor) SDL_SetTextureColorMod(texture, (Uint8)r, (Uint8)g, (Uint8)b);
+
+    SDL_FRect destRect = { x, y, width, height };
+    SDL_FPoint center  = { originX * width, originY * height };
+
+    SDL_FlipMode flip = SDL_FLIP_NONE;
+    if (flipH && flipV) flip = (SDL_FlipMode)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
+    else if (flipH)     flip = SDL_FLIP_HORIZONTAL;
+    else if (flipV)     flip = SDL_FLIP_VERTICAL;
+
+    bool ok = SDL_RenderTextureRotated(renderer, texture, NULL, &destRect, angle, &center, flip);
+
+    if (hasAlpha) SDL_SetTextureAlphaMod(texture, 255);
+    if (hasColor) SDL_SetTextureColorMod(texture, 255, 255, 255);
     return ok;
 }
 
@@ -773,8 +1021,8 @@ bool Renderer::renderImageRegion(const std::string& key,
     if (it == textureCache.end() || !it->second) return false;
 
     SDL_Texture* texture = it->second;
-    SDL_SetTextureAlphaMod(texture, (Uint8)(alpha * 255.0f));
-    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    bool hasAlpha = (alpha < 0.999f);
+    if (hasAlpha) SDL_SetTextureAlphaMod(texture, (Uint8)(alpha * 255.0f));
 
     SDL_FRect srcRect = { srcX, srcY, srcW, srcH };
     SDL_FRect dstRect = { dx, dy, dw, dh };
@@ -787,7 +1035,7 @@ bool Renderer::renderImageRegion(const std::string& key,
 
     bool ok = SDL_RenderTextureRotated(renderer, texture, &srcRect, &dstRect,
                                         angle, &center, flip) == 0;
-    SDL_SetTextureAlphaMod(texture, 255);
+    if (hasAlpha) SDL_SetTextureAlphaMod(texture, 255);
     return ok;
 }
 
@@ -800,6 +1048,56 @@ bool Renderer::getImageSize(const std::string& key, int& w, int& h) {
     w = (int)fw;
     h = (int)fh;
     return true;
+}
+
+// ---- drawTileMap ----
+bool Renderer::drawTileMap(const std::string& tilesetKey,
+                            int tileW, int tileH, int cols, int rows,
+                            const std::vector<int>& tiles,
+                            float x, float y, float alpha) {
+    if (!renderer || tileW <= 0 || tileH <= 0 || cols <= 0 || rows <= 0) return false;
+
+    auto it = textureCache.find(tilesetKey);
+    if (it == textureCache.end() || !it->second) return false;
+    SDL_Texture* tex = it->second;
+
+    // Get tileset texture dimensions to compute tile columns in the sheet
+    float texW, texH;
+    if (SDL_GetTextureSize(tex, &texW, &texH) != 0) return false;
+    int sheetCols = (int)(texW / tileW);
+    if (sheetCols <= 0) sheetCols = 1;
+
+    bool hasAlpha = (alpha < 0.999f);
+    if (hasAlpha) SDL_SetTextureAlphaMod(tex, (Uint8)(alpha * 255.0f));
+
+    int totalTiles = cols * rows;
+    for (int i = 0; i < totalTiles && i < (int)tiles.size(); i++) {
+        int tileId = tiles[i];
+        if (tileId < 0) continue;  // empty/negative = skip
+
+        int srcCol = tileId % sheetCols;
+        int srcRow = tileId / sheetCols;
+
+        SDL_FRect src = { (float)(srcCol * tileW), (float)(srcRow * tileH),
+                          (float)tileW, (float)tileH };
+
+        int mapCol = i % cols;
+        int mapRow = i / cols;
+
+        SDL_FRect dst = { x + mapCol * tileW, y + mapRow * tileH,
+                          (float)tileW, (float)tileH };
+
+        SDL_RenderTexture(renderer, tex, &src, &dst);
+    }
+
+    if (hasAlpha) SDL_SetTextureAlphaMod(tex, 255);
+    return true;
+}
+
+void* Renderer::getTextureHandle(const std::string& key) {
+    auto it = textureCache.find(key);
+    if (it == textureCache.end()) return nullptr;
+    return (void*)it->second;
 }
 
 // ---- Primitives ----
@@ -908,18 +1206,35 @@ void Renderer::drawRectEx(float x, float y, float w, float h,
 bool Renderer::loadVideo(const std::string& key, const std::string& filename) {
     if (videoCache.count(key)) return true;
 
-    std::string fullPath;
-    if (!projectFolder.empty()) {
-        fullPath = projectFolder;
-        if (fullPath.back() != '/' && fullPath.back() != '\\') fullPath += '/';
-        fullPath += filename;
+    std::filesystem::path exeDir = getExeDir();
+    std::vector<std::filesystem::path> candidates;
+    std::filesystem::path testPath(filename);
+    
+    if (testPath.is_absolute()) {
+        candidates.push_back(testPath);
     } else {
-        fullPath = filename;
+        if (!projectFolder.empty()) candidates.push_back(std::filesystem::path(projectFolder) / filename);
+        candidates.push_back(exeDir / "userdata" / filename);
+        candidates.push_back(exeDir / filename);
+        candidates.push_back(std::filesystem::current_path() / filename);
     }
 
-    plm_t* plm = plm_create_with_filename(fullPath.c_str());
+    std::filesystem::path foundPath;
+    for (const auto& p : candidates) {
+        if (std::filesystem::exists(p)) {
+            foundPath = p;
+            break;
+        }
+    }
+
+    if (foundPath.empty()) {
+        std::cerr << "loadVideo: failed to locate '" << filename << "'" << std::endl;
+        return false;
+    }
+
+    plm_t* plm = plm_create_with_filename(foundPath.string().c_str());
     if (!plm) {
-        std::cerr << "loadVideo: failed to open '" << fullPath << "'" << std::endl;
+        std::cerr << "loadVideo: failed to open '" << foundPath.string() << "'" << std::endl;
         return false;
     }
     plm_set_audio_enabled(plm, FALSE);

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendering - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link active">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Rendering</h1>
+            <p class="doc-p">All functions for drawing images, text, shapes, and managing visual output in Like2D.</p>
+
+            <h2 class="doc-h2" id="screen-images">Screen & Images</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">clearScreen(red, green, blue)</code></h3>
+            <p class="doc-p">Clears the screen with the specified RGB color.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">red</code> (integer): Red component (0-255)</li>
+                <li><code class="doc-code">green</code> (integer): Green component (0-255)</li>
+                <li><code class="doc-code">blue</code> (integer): Blue component (0-255)</li>
+            </ul>
+            <pre class="doc-pre"><code>clearScreen(0, 0, 0)        -- Black
+clearScreen(255, 255, 255)  -- White
+clearScreen(100, 149, 237)  -- Cornflower blue</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">loadImage(filename)</code></h3>
+            <p class="doc-p">Loads an image from file; the filename is used as the key. Automatically tries encrypted files first (with <code class="doc-code">L2DE</code> header), then <code class="doc-code">game.like</code> archive, then the project folder.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">filename</code> (string): Path to the image file</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">success</code> (boolean): true if loaded successfully, false otherwise</li>
+            </ul>
+            <pre class="doc-pre"><code>if loadImage("assets/player.png") then
+    print("Player image loaded successfully")
+else
+    print("Failed to load player image")
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">renderImage(key, x, y, width, height)</code></h3>
+            <p class="doc-p">Renders a previously loaded image at the specified position.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">key</code> (string): The filename used when loading the image</li>
+                <li><code class="doc-code">x</code> (integer): X position in pixels</li>
+                <li><code class="doc-code">y</code> (integer): Y position in pixels</li>
+                <li><code class="doc-code">width</code> (integer): Render width in pixels</li>
+                <li><code class="doc-code">height</code> (integer): Render height in pixels</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">success</code> (boolean): true if rendered successfully, false otherwise</li>
+            </ul>
+            <pre class="doc-pre"><code>renderImage("assets/player.png", 100, 200, 64, 64)</code></pre>
+
+            <h2 class="doc-h2" id="advanced-image-rendering">Advanced Image Rendering</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">renderImageEx(key, x, y, w, h, angle, flipX, flipY, alpha, originX, originY)</code></h3>
+            <p class="doc-p">Renders image with rotation, flipping, transparency, and scaling.</p>
+            <ul class="doc-ul">
+                <li>angle: degrees</li>
+                <li>flipX, flipY: boolean</li>
+                <li>alpha: 0-1 (default 1.0)</li>
+                <li>originX, originY: 0-1 (0.5 = center)</li>
+            </ul>
+            <pre class="doc-pre"><code>renderImageEx("player", 400, 300, 64, 64, 45, true, false, 0.5, 0.5, 0.5)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">renderImageRegion(key, dx, dy, dw, dh, sx, sy, sw, sh, angle, flipX, flipY, alpha, originX, originY)</code></h3>
+            <p class="doc-p">Renders a sub-rectangle from a sprite sheet.</p>
+            <pre class="doc-pre"><code>renderImageRegion("spritesheet", 400, 300, 64, 64, 0, 0, 32, 32, 0, false, false, 1.0, 0.5, 0.5)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">getImageSize(key)</code></h3>
+            <p class="doc-p">Returns loaded image dimensions (width, height).</p>
+            <pre class="doc-pre"><code>local w, h = getImageSize("player")</code></pre>
+
+            <h2 class="doc-h2" id="text-rendering">Text Rendering</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">loadFont(filename, size)</code></h3>
+            <p class="doc-p">Loads a font file for text rendering; the filename is used as the key.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">filename</code> (string): Path to the font file</li>
+                <li><code class="doc-code">size</code> (integer): Font size in points</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">success</code> (boolean): true if loaded successfully, false otherwise</li>
+            </ul>
+            <pre class="doc-pre"><code>if loadFont("fonts/arial.ttf", 24) then
+    print("Font loaded successfully")
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">drawText(text, fontKey, x, y, red, green, blue)</code></h3>
+            <p class="doc-p">Draws text at the specified position using a preloaded font.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">text</code> (string): The text to render</li>
+                <li><code class="doc-code">fontKey</code> (string): The filename used when loading the font</li>
+                <li><code class="doc-code">x</code> (integer): X position in pixels</li>
+                <li><code class="doc-code">y</code> (integer): Y position in pixels</li>
+                <li><code class="doc-code">red</code> (integer): Red color component (0-255)</li>
+                <li><code class="doc-code">green</code> (integer): Green color component (0-255)</li>
+                <li><code class="doc-code">blue</code> (integer): Blue color component (0-255)</li>
+            </ul>
+            <pre class="doc-pre"><code>drawText("Hello World!", "fonts/arial.ttf", 10, 10, 255, 255, 255)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">setDefaultFont(filename)</code></h3>
+            <p class="doc-p">Sets the default font used by <code class="doc-code">drawTextDirect()</code>. If you don't call this, Like2D will automatically try to find a system font (Segoe UI on Windows, DejaVu on Linux).</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">filename</code> (string): Path to a .ttf font file (relative to project folder or absolute path)</li>
+            </ul>
+            <pre class="doc-pre"><code>setDefaultFont("fonts/myfont.ttf")</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">drawTextDirect(text, x, y, size, red, green, blue, alpha)</code></h3>
+            <p class="doc-p">Draws text without preloading a font. Uses the default font set by <code class="doc-code">setDefaultFont()</code>, or automatically detects a system font if none is set. Easiest way to render text.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">text</code> (string): The text to render</li>
+                <li><code class="doc-code">x</code> (integer): X position in pixels</li>
+                <li><code class="doc-code">y</code> (integer): Y position in pixels</li>
+                <li><code class="doc-code">size</code> (integer): Font size in points</li>
+                <li><code class="doc-code">red</code> (integer): Red color component (0-255)</li>
+                <li><code class="doc-code">green</code> (integer): Green color component (0-255)</li>
+                <li><code class="doc-code">blue</code> (integer): Blue color component (0-255)</li>
+                <li><code class="doc-code">alpha</code> (integer, optional): Alpha component (0-255, default 255)</li>
+            </ul>
+            <pre class="doc-pre"><code>drawTextDirect("Hello World!", 10, 10, 48, 255, 255, 255, 255)
+drawTextDirect("Score: " .. score, 10, 50, 24, 255, 255, 0, 255)</code></pre>
+
+            <h2 class="doc-h2" id="primitives">Primitives</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">drawRect(x, y, w, h, r, g, b, a, filled, angle)</code></h3>
+            <p class="doc-p">Draws a rectangle. Set filled=true for solid, false for outline. angle in degrees.</p>
+            <pre class="doc-pre"><code>drawRect(100, 100, 64, 64, 255, 0, 0, 255, true, 45)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">drawLine(x1, y1, x2, y2, r, g, b, a)</code></h3>
+            <p class="doc-p">Draws a line between two points.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">drawCircle(x, y, radius, r, g, b, a, filled)</code></h3>
+            <p class="doc-p">Draws a circle at the given position.</p>
+
+            <p class="doc-p">See also: <a href="animation.html" class="doc-link">Animation</a> for sprite-sheet animation with <code class="doc-code">loadAnimation()</code>.</p>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

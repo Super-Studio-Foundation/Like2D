@@ -6,3 +6,4 @@ class Renderer;
 class AudioManager;
 
 void register_lua_functions(lua_State* L, Engine* engine, Renderer* renderer);
+void cleanup_lua_audio();

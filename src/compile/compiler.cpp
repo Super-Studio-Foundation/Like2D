@@ -1,4 +1,5 @@
 #include "compiler.hpp"
+#include "../platform.h"
 #include "../external/miniz/miniz.h"
 #include <iostream>
 #include <fstream>
@@ -215,19 +216,7 @@ bool Compiler::createDistFolder(const std::filesystem::path& projectPath) {
 
 bool Compiler::copyExecutableAndDLLs(const std::filesystem::path& projectPath, const std::string& gameName, TargetPlatform target) {
     // ── Resolve current host exe path ───────────────────────────────
-    std::filesystem::path currentExe;
-#ifdef _WIN32
-    char currentHostPath[MAX_PATH];
-    GetModuleFileNameA(NULL, currentHostPath, MAX_PATH);
-    currentExe = std::filesystem::path(currentHostPath);
-#else
-    char currentHostPath[4096] = {};
-    ssize_t len = readlink("/proc/self/exe", currentHostPath, sizeof(currentHostPath)-1);
-    if (len >= 0) {
-        currentHostPath[len] = '\0';
-        currentExe = std::filesystem::path(currentHostPath);
-    }
-#endif
+    std::filesystem::path currentExe = getExePath();
 
     if (currentExe.empty()) {
          std::cerr << "Error: Failed to resolve current executable path." << std::endl;
@@ -241,6 +230,8 @@ bool Compiler::copyExecutableAndDLLs(const std::filesystem::path& projectPath, c
     std::filesystem::path sourceExe;
     std::string targetExeSuffix = (target == TargetPlatform::Windows) ? ".exe" : "";
     std::string targetLibExt = (target == TargetPlatform::Windows) ? ".dll" : ".so";
+    // The game runner is always "Like2D" (not LikeC which is the compiler)
+    std::string runnerName = "Like2D" + targetExeSuffix;
 
     bool crossCompiling = false;
 #ifdef _WIN32
@@ -249,27 +240,24 @@ bool Compiler::copyExecutableAndDLLs(const std::filesystem::path& projectPath, c
     if (target == TargetPlatform::Windows) crossCompiling = true;
 #endif
 
-    if (!crossCompiling) {
-        sourceExe = currentExe;
-    } else {
-        // Look for the target binary in the same directory as the host binary
-        std::string targetBaseName = currentExe.stem().string(); // Use current runner's name (e.g. Like2D or LikeC)
-        sourceExe = exeDir / (targetBaseName + targetExeSuffix);
-        
-        if (!std::filesystem::exists(sourceExe)) {
-            // Try looking in a platform-specific subfolder
+    // Always look for the Like2D game runner next to the current exe
+    sourceExe = exeDir / runnerName;
+
+    if (!std::filesystem::exists(sourceExe)) {
+        // Try platform-specific subfolder for cross-compiling
+        if (crossCompiling) {
             std::string platformFold = (target == TargetPlatform::Windows) ? "windows" : "linux";
-            sourceExe = exeDir / platformFold / (targetBaseName + targetExeSuffix);
+            sourceExe = exeDir / platformFold / runnerName;
         }
 
         if (!std::filesystem::exists(sourceExe)) {
-            std::cerr << "\n[!] Error: Target runner binary not found: " << (target == TargetPlatform::Windows ? "Like2D.exe" : "Like2D") << std::endl;
-            std::cerr << "To package for " << (target == TargetPlatform::Windows ? "Windows" : "Linux") << " from this host, you need to provide the engine binary for that platform." << std::endl;
-            std::cerr << "Please place the " << (target == TargetPlatform::Windows ? "Windows" : "Linux") << " version of the engine (and its libraries) in:" << std::endl;
-            std::cerr << "  -> " << exeDir.string() << std::endl;
-            std::cerr << "  OR in a " << (target == TargetPlatform::Windows ? "windows" : "linux") << "/ subfolder." << std::endl;
-            std::cerr << "\nTIP: You don't need WSL to use the packager, just the binaries themselves." << std::endl;
-            std::cerr << "If you don't have them, build the engine on the target platform first and copy them over." << std::endl;
+            std::cerr << "\n[!] Error: Game runner binary not found: " << runnerName << std::endl;
+            std::cerr << "Looked in: " << exeDir.string() << std::endl;
+            if (crossCompiling) {
+                std::cerr << "  and: " << (exeDir / ((target == TargetPlatform::Windows) ? "windows" : "linux")).string() << std::endl;
+            }
+            std::cerr << "The compiler needs the Like2D game runner to package your game." << std::endl;
+            std::cerr << "Make sure Like2D" << targetExeSuffix << " is in the same folder as LikeC." << std::endl;
             return false;
         }
     }

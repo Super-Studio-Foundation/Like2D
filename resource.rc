@@ -2,9 +2,26 @@
 
 MAINICON ICON "logo.ico"
 
+#ifndef RT_MANIFEST
+#define RT_MANIFEST 24
+#endif
+1 RT_MANIFEST
+BEGIN
+    "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
+    "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">"
+    "  <assemblyIdentity version=""1.2.0.0"" processorArchitecture=""*"" name=""Like2D"" type=""win32""/>"
+    "  <application xmlns=""urn:schemas-microsoft-com:asm.v3"">"
+    "    <windowsSettings>"
+    "      <dpiAware xmlns=""http://schemas.microsoft.com/SMI/2005/WindowsSettings"">true/pm</dpiAware>"
+    "      <dpiAwareness xmlns=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">PerMonitorV2</dpiAwareness>"
+    "    </windowsSettings>"
+    "  </application>"
+    "</assembly>"
+END
+
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     1,0,0,0
-PRODUCTVERSION  1,0,0,0
+FILEVERSION     1,2,0,0
+PRODUCTVERSION  1,2,0,0
 FILEFLAGSMASK   0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -20,14 +37,14 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName",      "SSOFoundation"
-            VALUE "FileDescription",  "Like2D Game Framework 2D"
-            VALUE "FileVersion",      "1.0.0.0"
-            VALUE "InternalName",     "Like2D"
+            VALUE "FileDescription",  "A lightweight, ultra-fast 2D game framework powered by Luau and SDL3."
+            VALUE "FileVersion",      "1.2.0.0"
+            VALUE "InternalName",      "Like2D"
             VALUE "LegalCopyright",   "Copyright (C) 2026 SSOFoundation. All rights reserved."
             VALUE "OriginalFilename", "Like2D.exe"
             VALUE "ProductName",      "Like2D Framework"
-            VALUE "ProductVersion",   "1.0.0.0"
-            VALUE "Author",           "Rozak (SSOFoundation)"
+            VALUE "ProductVersion",   "1.2.0.0"
+            VALUE "Author",           "SSOFoundation"
         END
     END
     BLOCK "VarFileInfo"

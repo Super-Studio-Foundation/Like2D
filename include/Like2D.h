@@ -1,10 +1,14 @@
 #ifndef LIKE2D_H
 #define LIKE2D_H
 
-#ifdef LIKE2D_EXPORTS
-#define LIKE2D_API __declspec(dllexport)
+#ifdef _WIN32
+    #ifdef LIKE2D_EXPORTS
+    #define LIKE2D_API __declspec(dllexport)
+    #else
+    #define LIKE2D_API __declspec(dllimport)
+    #endif
 #else
-#define LIKE2D_API __declspec(dllimport)
+    #define LIKE2D_API
 #endif
 
 #include <SDL3/SDL.h>
@@ -13,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <functional>
 
 // Forward declarations
 class Engine;
@@ -29,6 +34,9 @@ namespace Like2D {
         void run();
         void shutdown();
 
+        // Hot reload: re-reads main.luau and returns new lua_State (nullptr = no reload)
+        lua_State* hotReload();
+
         struct DofileState {
             std::string projectFolder;
             std::string exeDir;
@@ -42,6 +50,13 @@ namespace Like2D {
         std::string m_mainLuaPath;
         bool m_running;
         std::vector<char> m_gameLikeZipData;  // cached decrypted zip bytes
+        
+        // Hot reload (dev mode only)
+        bool m_hotReloadEnabled = false;
+        std::filesystem::file_time_type m_lastModTime{};
+        int m_hotReloadFrameCounter = 0;
+        bool m_isProduction = false;
+        std::vector<std::pair<std::string, std::filesystem::file_time_type>> m_watchedDofileFiles;
         
         // Member variables instead of statics for per-instance state
         std::vector<char> m_zipCache;          // per-instance game.like cache

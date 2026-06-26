@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link active">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Animation <span class="new-badge">NEW</span></h1>
+            <p class="doc-p">Like2D includes a built-in sprite-sheet animation system. Create animations from horizontal sprite strips and control playback with a rich object-oriented API. Animations use <code class="doc-code">loadImage</code> and <code class="doc-code">renderImageRegion</code> under the hood.</p>
+
+            <h2 class="doc-h2" id="loadanimation">loadAnimation</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">loadAnimation(filename, frameWidth, frameHeight, frameCount, frameDuration)</code></h3>
+            <p class="doc-p">Creates an animation object from a horizontal sprite sheet. The image is automatically loaded via <code class="doc-code">loadImage</code>.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">filename</code> (string): Path to the sprite sheet image (e.g., <code class="doc-code">"assets/player.png"</code>)</li>
+                <li><code class="doc-code">frameWidth</code> (number): Width of a single frame in pixels</li>
+                <li><code class="doc-code">frameHeight</code> (number): Height of a single frame in pixels</li>
+                <li><code class="doc-code">frameCount</code> (number): Total number of frames in the strip</li>
+                <li><code class="doc-code">frameDuration</code> (number, optional): Seconds per frame (default: <code class="doc-code">0.1</code>)</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">animation</code> (table): An animation object, or <code class="doc-code">nil</code> if the image failed to load</li>
+            </ul>
+            <pre class="doc-pre"><code>-- 4-frame walk animation, 64x64 per frame, 0.1s per frame
+local walkAnim = loadAnimation("assets/player_walk.png", 64, 64, 4, 0.1)
+
+-- 2-frame idle animation, 0.5s per frame
+local idleAnim = loadAnimation("assets/player_idle.png", 64, 64, 2, 0.5)</code></pre>
+
+            <h2 class="doc-h2" id="animation-methods">Animation Methods</h2>
+            <p class="doc-p">Once you have an animation object, use these methods to control playback and rendering.</p>
+
+            <table class="doc-table">
+                <tr><th>Method</th><th>Description</th></tr>
+                <tr><td><code class="doc-code">anim:update(dt)</code></td><td>Advances the animation timer. Call in <code class="doc-code">onUpdate(dt)</code>.</td></tr>
+                <tr><td><code class="doc-code">anim:draw(x, y, w, h)</code></td><td>Renders the current frame. <code class="doc-code">w</code>/<code class="doc-code">h</code> default to frame size.</td></tr>
+                <tr><td><code class="doc-code">anim:drawEx(x, y, w, h, angle, flipH, flipV, alpha, ox, oy)</code></td><td>Renders with full transform (rotation, flip, alpha, origin).</td></tr>
+                <tr><td><code class="doc-code">anim:play()</code></td><td>Starts or resumes playback.</td></tr>
+                <tr><td><code class="doc-code">anim:pause()</code></td><td>Pauses at the current frame.</td></tr>
+                <tr><td><code class="doc-code">anim:resume()</code></td><td>Resumes after pausing.</td></tr>
+                <tr><td><code class="doc-code">anim:stop()</code></td><td>Stops and resets to frame 0.</td></tr>
+                <tr><td><code class="doc-code">anim:reset()</code></td><td>Same as <code class="doc-code">stop()</code>.</td></tr>
+                <tr><td><code class="doc-code">anim:setFrame(n)</code></td><td>Jumps to frame <code class="doc-code">n</code> (0-indexed).</td></tr>
+                <tr><td><code class="doc-code">anim:isPlaying()</code></td><td>Returns <code class="doc-code">true</code> if currently playing.</td></tr>
+                <tr><td><code class="doc-code">anim:isFinished()</code></td><td>Returns <code class="doc-code">true</code> if a non-looping animation has ended.</td></tr>
+                <tr><td><code class="doc-code">anim:getCurrentFrame()</code></td><td>Returns the current frame index (0-indexed).</td></tr>
+                <tr><td><code class="doc-code">anim:getFrameCount()</code></td><td>Returns the total number of frames.</td></tr>
+                <tr><td><code class="doc-code">anim:setLooping(bool)</code></td><td>Sets whether animation loops (default: <code class="doc-code">true</code>).</td></tr>
+                <tr><td><code class="doc-code">anim:setSpeed(multiplier)</code></td><td>Sets playback speed (<code class="doc-code">1</code> = normal, <code class="doc-code">2</code> = double).</td></tr>
+                <tr><td><code class="doc-code">anim:setPingPong(bool)</code></td><td>Enables ping-pong mode (forward &rarr; backward &rarr; forward).</td></tr>
+                <tr><td><code class="doc-code">anim:setReverse(bool)</code></td><td>Plays animation in reverse.</td></tr>
+                <tr><td><code class="doc-code">anim:setAlpha(alpha)</code></td><td>Sets default opacity for drawing (0&ndash;1).</td></tr>
+                <tr><td><code class="doc-code">anim:setDuration(seconds)</code></td><td>Changes per-frame duration at runtime.</td></tr>
+            </table>
+
+            <h2 class="doc-h2" id="quick-example">Quick Example</h2>
+            <pre class="doc-pre"><code>local walkAnim, idleAnim, currentAnim
+
+function onInit()
+    walkAnim = loadAnimation("assets/player_walk.png", 64, 64, 4, 0.1)
+    idleAnim = loadAnimation("assets/player_idle.png", 64, 64, 2, 0.5)
+    currentAnim = idleAnim
+    player = { x = 400, y = 300, speed = 200 }
+end
+
+function onUpdate(dt)
+    -- Switch animation based on input
+    if isKeyDown("Left") or isKeyDown("Right") then
+        currentAnim = walkAnim
+        if not walkAnim:isPlaying() then walkAnim:play() end
+    else
+        if currentAnim == walkAnim then
+            currentAnim = idleAnim
+            idleAnim:play()
+        end
+    end
+
+    -- Move player
+    if isKeyDown("Left") then player.x = player.x - player.speed * dt end
+    if isKeyDown("Right") then player.x = player.x + player.speed * dt end
+
+    -- Update current animation
+    currentAnim:update(dt)
+end
+
+function onDraw()
+    clearScreen(30, 30, 50)
+    currentAnim:draw(player.x, player.y, 64, 64)
+    drawTextDirect("Frame: " .. currentAnim:getCurrentFrame(), 10, 10, 20, 255, 255, 255, 255)
+end</code></pre>
+
+            <h2 class="doc-h2" id="multi-animation-example">Multi-Animation Example</h2>
+            <pre class="doc-pre"><code>-- Manage multiple animations for different states
+local anims = {}
+local currentState = "idle"
+
+function onInit()
+    anims.idle = loadAnimation("assets/player_idle.png", 64, 64, 2, 0.5)
+    anims.walk = loadAnimation("assets/player_walk.png", 64, 64, 4, 0.1)
+    anims.jump = loadAnimation("assets/player_jump.png", 64, 64, 3, 0.15)
+    anims.jump:setLooping(false)
+    
+    player = { x = 400, y = 300, vy = 0, grounded = true }
+end
+
+function onUpdate(dt)
+    -- Determine state from input/physics
+    if not player.grounded then
+        currentState = "jump"
+    elseif isKeyDown("Left") or isKeyDown("Right") then
+        currentState = "walk"
+    else
+        currentState = "idle"
+    end
+    
+    -- Update only the current animation
+    anims[currentState]:update(dt)
+end
+
+function onDraw()
+    clearScreen(30, 30, 50)
+    anims[currentState]:draw(player.x, player.y, 64, 64)
+end</code></pre>
+
+            <p class="doc-p">See also: <a href="rendering.html" class="doc-link">Rendering</a> for the underlying <code class="doc-code">renderImageRegion()</code> function.</p>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 :: ===========================================
 :: Like2D Framework Build System
-:: SSOFoundation - International Edition
+:: SSOFoundation
 :: ===========================================
 
 :: --- CONFIGURATION ---
@@ -11,7 +11,7 @@ set RELEASE_NAME=Like2D.exe
 set DEBUG_NAME=LikeC.exe
 set DLL_NAME=Like.dll
 set BUILD_DIR=build
-set ENGINE_SOURCES=src\Like2D.cpp src\core\Engine.cpp src\renderer\Renderer.cpp src\scripting\LuaBindings.cpp src\compile\compiler.cpp src\audio\AudioManager.cpp external\miniz\miniz.c
+set ENGINE_SOURCES=src\Like2D.cpp src\core\Engine.cpp src\renderer\Renderer.cpp src\scripting\LuaBindings.cpp src\compile\compiler.cpp src\audio\AudioManager.cpp src\network\NetworkManager.cpp external\miniz\miniz.c
 set LAUNCHER_SOURCES=src\main.cpp
 set RESOURCE_FILE=resource.rc
 
@@ -23,7 +23,7 @@ set INCLUDES=-Iinclude -Iexternal\SDL3\include -Iexternal\Luau\VM\include -Iexte
 set LIB_PATHS=-L"%SDL_DIR%" -L"%LUAU_DIR%" -L"external\lib" -L"%BUILD_DIR%"
 
 :: Libraries for dynamic linking to SDL3.dll
-set LIBS=-lSDL3 -lLuau.Compiler -lLuau.VM -lLuau.Ast -lLuau.Bytecode -lLuau.Common -lbox2d -lgdi32 -luser32 -lkernel32 -lwinmm -lole32 -loleaut32 -lsetupapi -lversion -luuid
+set LIBS=-lSDL3 -lLuau.Compiler -lLuau.VM -lLuau.Ast -lLuau.Bytecode -lLuau.Common -lbox2d -lws2_32 -lgdi32 -luser32 -lkernel32 -lwinmm -lole32 -loleaut32 -lsetupapi -lversion -luuid -lcomdlg32 -lshell32
 
 :: Compilation flags for performance and small size
 set CFLAGS=-std=c++20 -O2 -static-libgcc -static-libstdc++ -c
@@ -56,8 +56,31 @@ if not exist "%SDL_DIR%\libSDL3.dll.a" (
     exit /b 1
 )
 
-echo [3/6] Compiling resources...
+echo [3/6] Compiling engine DLL (incremental)...
 set RESOURCE_OBJ=%BUILD_DIR%\resource.o
+set ENGINE_OBJECT_FILES=
+set NEED_DLL_LINK=0
+
+:: Check if any header changed — if so, force full recompile
+:: (batch can't track per-source header deps, so any header change = recompile all)
+set HEADER_CHANGED=0
+set HEADER_SENTINEL=%BUILD_DIR%\.header_check
+if exist "%HEADER_SENTINEL%" (
+    for /r src %%H in (*.h *.hpp) do (
+        if exist "%%H" (
+            for %%A in ("%%H") do set HTIME=%%~tH
+            for %%A in ("%HEADER_SENTINEL%") do set STIME=%%~tA
+            if "!HTIME!" gtr "!STIME!" set HEADER_CHANGED=1
+        )
+    )
+    if !HEADER_CHANGED!==1 (
+        echo   Headers changed — recompiling all sources.
+        del /q "%BUILD_DIR%\*.o" 2^>nul
+    )
+)
+
+:: Compile resources after header-change cleanup so resource.o survives
+echo [4/6] Compiling resources...
 set NEED_COMPILE_RESOURCE=1
 
 if exist "%RESOURCE_OBJ%" (
@@ -79,10 +102,6 @@ if %NEED_COMPILE_RESOURCE%==1 (
 ) else (
     echo   Resource is up-to-date, skipping compilation.
 )
-
-echo [4/6] Compiling engine DLL (incremental)...
-set ENGINE_OBJECT_FILES=
-set NEED_DLL_LINK=0
 
 for %%S in (%ENGINE_SOURCES%) do (
     set SOURCE_FILE=%%S
@@ -227,6 +246,10 @@ if %NEED_DEBUG_LINK%==1 (
 
 echo.
 echo [SUCCESS] Build completed successfully!
+
+:: Update header sentinel so next build can detect header changes
+echo. > "%BUILD_DIR%\.header_check"
+
 echo Deploying SDL3.dll...
 
 :: Copy SDL3.dll to be alongside Like2D.exe
