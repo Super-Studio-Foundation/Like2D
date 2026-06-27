@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+                <a href="https://github.com/Super-Studio-Foundation/Like2D" target="_blank" class="btn btn-secondary">Source</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link active">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Audio</h1>
+            <p class="doc-p">Full audio playback system using a key-based approach. Load sounds once, then play/stop/pause them using their key. Supported formats: WAV, MP3, OGG. Multiple sounds can play simultaneously.</p>
+
+            <h2 class="doc-h2" id="loading-unloading">Loading & Unloading</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">loadSound(key, filename)</code></h3>
+            <p class="doc-p">Loads a sound file into memory. The <code class="doc-code">key</code> is a unique string identifier used for all subsequent operations.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">key</code> (string): Unique identifier for this sound</li>
+                <li><code class="doc-code">filename</code> (string): Path to the audio file (.wav, .mp3, or .ogg)</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">success</code> (boolean)</p>
+            <pre class="doc-pre"><code>loadSound("jump", "assets/jump.wav")
+loadSound("bgm", "assets/theme.mp3")
+loadSound("explosion", "assets/boom.ogg")</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">unloadSound(key)</code></h3>
+            <p class="doc-p">Frees the sound from memory. Always call this in <code class="doc-code">onCleanup()</code> or when a sound is no longer needed to prevent memory leaks.</p>
+
+            <h2 class="doc-h2" id="playback-control">Playback Control</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">playSound(key, loop)</code></h3>
+            <p class="doc-p">Plays a previously loaded sound. Set <code class="doc-code">loop</code> to <code class="doc-code">true</code> for infinite looping (background music) or <code class="doc-code">false</code> for one-shot playback (sound effects).</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">key</code> (string): The sound key</li>
+                <li><code class="doc-code">loop</code> (boolean): <code class="doc-code">true</code> to loop, <code class="doc-code">false</code> for one-shot</li>
+            </ul>
+            <pre class="doc-pre"><code>playSound("bgm", true)    -- Looping background music
+playSound("jump", false)  -- One-shot jump SFX</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">stopSound(key)</code></h3>
+            <p class="doc-p">Stops playback and resets the sound position to the beginning.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">pauseSound(key)</code></h3>
+            <p class="doc-p">Pauses the sound at its current position. Use <code class="doc-code">resumeSound()</code> to continue.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">resumeSound(key)</code></h3>
+            <p class="doc-p">Resumes a paused sound from where it was paused.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">isSoundPlaying(key)</code></h3>
+            <p class="doc-p">Returns <code class="doc-code">true</code> if the sound is currently playing (not paused or stopped).</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">playing</code> (boolean)</p>
+
+            <h2 class="doc-h2" id="volume-pitch">Volume & Pitch</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">setSoundVolume(key, volume)</code></h3>
+            <p class="doc-p">Sets the volume for a specific sound.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">volume</code> (number): 0.0 (silent) to 1.0 (full volume)</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">setMasterVolume(volume)</code></h3>
+            <p class="doc-p">Sets the global volume for all sounds simultaneously.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">volume</code> (number): 0.0 (silent) to 1.0 (full volume)</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">setSoundPitch(key, pitch)</code></h3>
+            <p class="doc-p">Changes playback speed and pitch. <code class="doc-code">1.0</code> = normal, <code class="doc-code">2.0</code> = double speed/pitch, <code class="doc-code">0.5</code> = half speed/pitch.</p>
+
+            <h2 class="doc-h2" id="complete-example">Complete Example</h2>
+            <pre class="doc-pre"><code>-- Complete audio management example
+function onInit()
+    loadSound("bgm", "assets/music.mp3")
+    loadSound("coin", "assets/coin.wav")
+    loadSound("hurt", "assets/hurt.wav")
+    playSound("bgm", true)
+end
+
+function onUpdate(dt)
+    -- Toggle music with M key
+    if isKeyJustPressed("m") then
+        if isSoundPlaying("bgm") then
+            pauseSound("bgm")
+        else
+            resumeSound("bgm")
+        end
+    end
+    -- Volume controls
+    if isKeyDown("Up") then
+        setMasterVolume(math.min(1.0, currentVol + dt))
+    end
+    -- Play SFX
+    if isKeyJustPressed("Space") then
+        playSound("coin", false)
+    end
+end
+
+function onCleanup()
+    stopSound("bgm")
+    unloadSound("bgm")
+    unloadSound("coin")
+    unloadSound("hurt")
+end</code></pre>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

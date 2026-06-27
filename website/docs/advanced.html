@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+                <a href="https://github.com/Super-Studio-Foundation/Like2D" target="_blank" class="btn btn-secondary">Source</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link active">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Advanced</h1>
+            <p class="doc-p">Filesystem, encryption, video playback, and miscellaneous utilities.</p>
+
+            <h2 class="doc-h2" id="filesystem-api">Filesystem API <span class="new-badge">NEW</span></h2>
+            <p class="doc-p">Functions for reading, writing, and managing files. All write operations use a separate <code class="doc-code">userdata/</code> folder to keep game data separate from engine files.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">readFile(path)</code></h3>
+            <p class="doc-p">Reads a text file and returns its content as a string.</p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">path</code> (string): Path to the file (relative to project or userdata folder).</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">content</code> (string/nil), <code class="doc-code">error</code> (string/nil)</p>
+            <pre class="doc-pre"><code>local content, err = readFile("settings.txt")
+if content then
+    print("File content: " .. content)
+else
+    print("Error: " .. err)
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">writeFile(path, content)</code></h3>
+            <p class="doc-p">Writes text content to a file in the userdata folder.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">success</code> (boolean), <code class="doc-code">error</code> (string/nil)</p>
+            <pre class="doc-pre"><code>local ok, err = writeFile("config.txt", "resolution=1920x1080")</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">createDirectory(path)</code></h3>
+            <p class="doc-p">Creates a new directory inside the userdata folder.</p>
+            <pre class="doc-pre"><code>createDirectory("saves")
+createDirectory("player/data")</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">listDirectory(path)</code></h3>
+            <p class="doc-p">Returns a table of filenames inside the given directory.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">fileExists(path)</code></h3>
+            <p class="doc-p">Checks whether a file exists.</p>
+            <pre class="doc-pre"><code>if fileExists("saves/slot1.dat") then
+    print("Save file found!")
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">deleteFile(path)</code></h3>
+            <p class="doc-p">Deletes a file from the userdata folder.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">getGamePath()</code></h3>
+            <p class="doc-p">Returns the absolute path to the game executable directory.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">getUserdataPath()</code></h3>
+            <p class="doc-p">Returns the absolute path to the userdata directory.</p>
+
+            <h2 class="doc-h2" id="encryption-api">Encryption API <span class="new-badge">NEW</span></h2>
+            <p class="doc-p">Universal file encryption system that works with ALL file types (images, zip, text, etc.). Uses XOR encryption with a unique <code class="doc-code">L2DE</code> magic header.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">encryptFile(path, inPlace)</code></h3>
+            <p class="doc-p">Encrypts any file. If <code class="doc-code">inPlace</code> is true, overwrites the original. If false, creates a <code class="doc-code">.enc</code> copy.</p>
+            <pre class="doc-pre"><code>-- Encrypt in-place (original file becomes encrypted)
+encryptFile("assets/player.png", true)
+
+-- Encrypt as .enc file (creates player.png.enc, keeps original)
+encryptFile("assets/player.png", false)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">decryptFile(path)</code></h3>
+            <p class="doc-p">Decrypts an encrypted file and overwrites it with the original content.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">readEncryptedFile(path)</code></h3>
+            <p class="doc-p">Reads and decrypts a file, returning the raw content as a string.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">content</code> (string/nil), <code class="doc-code">error</code> (string/nil)</p>
+
+            <h3 class="doc-h3"><code class="doc-code">writeEncryptedFile(path, data)</code></h3>
+            <p class="doc-p">Encrypts the given string data and writes it to a file with the <code class="doc-code">L2DE</code> magic header.</p>
+            <pre class="doc-pre"><code>-- Save encrypted data
+writeEncryptedFile("save.dat", json.encode({score = 100, level = 5}))
+
+-- Load it back
+local data = readEncryptedFile("save.dat")
+if data then
+    local save = json.decode(data)
+    print("Score: " .. save.score)
+end</code></pre>
+
+            <h3 class="doc-h3">Loading Encrypted Images</h3>
+            <p class="doc-p">The <code class="doc-code">loadImage()</code> function automatically detects encrypted files. Just encrypt your image and load it directly:</p>
+            <pre class="doc-pre"><code>-- Step 1: Encrypt an image
+encryptFile("assets/boss.png", false)  -- creates boss.png.enc
+
+-- Step 2: Load the encrypted image (auto-decrypts!)
+loadImage("assets/boss.png.enc")
+renderImage("assets/boss.png.enc", 0, 0, 128, 128)</code></pre>
+
+            <h2 class="doc-h2" id="video-playback">Video Playback</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">loadVideo(key, filename)</code></h3>
+            <p class="doc-p">Loads video file.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">updateVideo(key, dt)</code></h3>
+            <p class="doc-p">Updates video frame. Call in onUpdate().</p>
+
+            <h3 class="doc-h3"><code class="doc-code">renderVideo(key, x, y, w, h)</code></h3>
+            <p class="doc-p">Renders current video frame.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">playVideo(key, loop)</code></h3>
+            <p class="doc-p">Starts playback.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">pauseVideo(key)</code> / <code class="doc-code">stopVideo(key)</code></h3>
+            <p class="doc-p">Pauses/stops video playback.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">seekVideo(key, seconds)</code></h3>
+            <p class="doc-p">Jumps to time position.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">isVideoPlaying(key)</code> / <code class="doc-code">isVideoEnded(key)</code></h3>
+            <p class="doc-p">Returns playback state.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">getVideoDuration(key)</code> / <code class="doc-code">getVideoTime(key)</code></h3>
+            <p class="doc-p">Returns duration/current position in seconds.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">unloadVideo(key)</code></h3>
+            <p class="doc-p">Unloads video from memory.</p>
+
+            <h2 class="doc-h2" id="miscellaneous">Miscellaneous</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">quit()</code></h3>
+            <p class="doc-p">Cleanly closes the game.</p>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

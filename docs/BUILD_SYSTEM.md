@@ -24,9 +24,7 @@ The build creates two executables:
 
 Download the pre-built external package for version 1.3.0.0:
 
-```
-https://github.com/Super-Studio-Foundation/Like2D/releases/download/untagged-9c3a4ab8027a421f2c0d/external_1.3.0.0.zip
-```
+[Click Here to Download 1.3.0.0_External.zip][https://github.com/Super-Studio-Foundation/Like2D/releases/download/1.3.0.0_External/1.3.0.0_External.zip]
 
 Extract the contents into the `external/` folder at the project root. The final structure should look like:
 

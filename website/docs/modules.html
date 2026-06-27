@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modules - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+                <a href="https://github.com/Super-Studio-Foundation/Like2D" target="_blank" class="btn btn-secondary">Source</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link active">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Modules</h1>
+            <p class="doc-p">Like2D provides module-based APIs using table prefixes: <code class="doc-code">net.*</code>, <code class="doc-code">json.*</code>, <code class="doc-code">tilemap.*</code>, and <code class="doc-code">particle.*</code>.</p>
+
+            <h2 class="doc-h2" id="networking">Networking (net.*)</h2>
+            <p class="doc-p">Built-in TCP + UDP networking library for multiplayer games, chat systems, lobbies, and real-time sync. Uses native OS sockets with a background I/O thread. All events are delivered via callbacks: <code class="doc-code">onNetConnect</code>, <code class="doc-code">onNetMessage</code>, <code class="doc-code">onNetDisconnect</code>.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.createServer(port)</code></h3>
+            <p class="doc-p">Starts a TCP server listening on the given port. Incoming connections trigger <code class="doc-code">onNetConnect(peerId, ip, port)</code>.</p>
+            <pre class="doc-pre"><code>net.createServer(8080)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">net.connect(host, port)</code></h3>
+            <p class="doc-p">Connects to a remote TCP server as a client. Returns a peer ID for sending data.</p>
+            <pre class="doc-pre"><code>local server = net.connect("127.0.0.1", 8080)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">net.send(peerId, data)</code></h3>
+            <p class="doc-p">Sends a string message to a specific TCP peer.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.sendAll(data)</code></h3>
+            <p class="doc-p">Broadcasts a string message to all connected TCP peers.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.createUDP(port)</code></h3>
+            <p class="doc-p">Binds a UDP socket on the given port for receiving datagrams.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.sendUDP(ip, port, data)</code></h3>
+            <p class="doc-p">Sends a UDP datagram to the specified address. No connection needed.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.close()</code></h3>
+            <p class="doc-p">Closes all TCP and UDP connections and stops the network thread.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.getPeerCount()</code></h3>
+            <p class="doc-p">Returns the number of currently connected TCP peers.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.getPeerIP(peerId)</code></h3>
+            <p class="doc-p">Returns the IP address of a connected TCP peer.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.sendToAllExcept(excludePeerId, data)</code></h3>
+            <p class="doc-p">Sends a message to all connected peers EXCEPT one.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.disconnect(peerId, reason?)</code></h3>
+            <p class="doc-p">Forcefully disconnects a peer with an optional reason string.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.broadcastUDP(port, data)</code></h3>
+            <p class="doc-p">Sends a UDP broadcast to all machines on the local network. Used for LAN game discovery.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.httpGet(url)</code></h3>
+            <p class="doc-p">Performs a synchronous HTTP GET request. Returns a table with <code class="doc-code">status</code>, <code class="doc-code">body</code>, and <code class="doc-code">error</code> fields.</p>
+            <pre class="doc-pre"><code>local resp = net.httpGet("http://api.example.com/leaderboard")
+if resp.status == 200 then
+    local data = json.decode(resp.body)
+    for i, entry in ipairs(data) do
+        print(entry.name .. ": " .. entry.score)
+    end
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">net.httpPost(url, body, contentType?)</code></h3>
+            <p class="doc-p">Performs a synchronous HTTP POST request. <code class="doc-code">contentType</code> defaults to <code class="doc-code">"application/json"</code>.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.setPeerData(peerId, key, value)</code> / <code class="doc-code">net.getPeerData(peerId, key)</code></h3>
+            <p class="doc-p">Store and retrieve custom metadata for connected peers.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.getStats()</code></h3>
+            <p class="doc-p">Returns a table with network statistics: <code class="doc-code">{bytesSent, bytesReceived, packetsSent, packetsRecv, peerCount, uptime}</code>.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">net.setKeepalive(interval, timeout)</code></h3>
+            <p class="doc-p">Configures automatic disconnection of idle peers.</p>
+
+            <h3 class="doc-h3">Network Callbacks</h3>
+            <pre class="doc-pre"><code>function onNetConnect(peerId, ip, port)
+    print("Peer " .. peerId .. " connected from " .. ip)
+end
+
+function onNetMessage(peerId, data, ip, port)
+    print("Message from " .. ip .. ": " .. data)
+end
+
+function onNetDisconnect(peerId, reason)
+    print("Peer " .. peerId .. " disconnected: " .. reason)
+end</code></pre>
+
+            <h2 class="doc-h2" id="json-module">JSON Module (json.*)</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">json.load(filename)</code></h3>
+            <p class="doc-p">Loads JSON file, returns table and error.</p>
+            <pre class="doc-pre"><code>local data, err = json.load("settings.json")</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">json.save(filename, table)</code></h3>
+            <p class="doc-p">Saves table to JSON file.</p>
+            <pre class="doc-pre"><code>local ok, err = json.save("save.json", {score = 100})</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">json.encode(table)</code></h3>
+            <p class="doc-p">Converts table to JSON string.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">json.decode(string)</code></h3>
+            <p class="doc-p">Parses JSON string into table.</p>
+
+            <h2 class="doc-h2" id="tilemap">TileMap (tilemap.*)</h2>
+            <p class="doc-p">Built-in tilemap system for rendering 2D tile-based levels. Uses a tileset image and a grid of tile IDs.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">tilemap.create(tileset, tileW, tileH, cols, rows)</code></h3>
+            <p class="doc-p">Creates a new tilemap table with an empty grid. The tileset image must be loaded first with <code class="doc-code">loadImage()</code>.</p>
+            <pre class="doc-pre"><code>loadImage("tileset.png")
+local map = tilemap.create("tileset.png", 32, 32, 20, 15)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">tilemap.draw(map, x, y, alpha?)</code></h3>
+            <p class="doc-p">Renders the entire tilemap at the given screen position. One call draws all tiles.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">tilemap.setTile(map, row, col, tileId)</code></h3>
+            <p class="doc-p">Sets a tile at the given grid position. Tile ID 0 means empty (not drawn).</p>
+
+            <h3 class="doc-h3"><code class="doc-code">tilemap.getTile(map, row, col)</code></h3>
+            <p class="doc-p">Returns the tile ID at the given grid position.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">tilemap.fill(map, row, col, w, h, tileId)</code></h3>
+            <p class="doc-p">Fills a rectangular area of the map with a single tile ID.</p>
+            <pre class="doc-pre"><code>tilemap.fill(map, 10, 0, 10, 5, 2)</code></pre>
+
+            <h3 class="doc-h3">TileMap Example</h3>
+            <pre class="doc-pre"><code>local map
+
+function onInit()
+    setWindowSize(640, 480)
+    loadImage("tileset.png")
+    map = tilemap.create("tileset.png", 32, 32, 20, 15)
+    tilemap.fill(map, 0, 0, 20, 15, 0)  -- Fill with grass
+    -- Add wall border
+    for col = 0, 19 do
+        tilemap.setTile(map, 0, col, 1)
+        tilemap.setTile(map, 14, col, 1)
+    end
+end
+
+function onDraw()
+    clearScreen(0, 0, 0)
+    tilemap.draw(map, 0, 0)
+end</code></pre>
+
+            <h2 class="doc-h2" id="particle-system">Particle System (particle.*)</h2>
+            <p class="doc-p">High-performance C++ particle effects for explosions, fire, smoke, rain, snow, and more. Supports thousands of particles at 60fps.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.create(config)</code></h3>
+            <p class="doc-p">Creates a new particle system and returns an integer ID.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Config Table Fields:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">x, y</code> (number): Emitter position</li>
+                <li><code class="doc-code">rate</code> (number): Particles per second (default: 50)</li>
+                <li><code class="doc-code">lifetime</code> (number): Seconds each particle lives (default: 2.0)</li>
+                <li><code class="doc-code">speedMin, speedMax</code> (number): Velocity range</li>
+                <li><code class="doc-code">angle</code> (number): Emission direction in degrees, -90 = up</li>
+                <li><code class="doc-code">spread</code> (number): Emission cone width in degrees</li>
+                <li><code class="doc-code">gravity</code> (number): Downward acceleration</li>
+                <li><code class="doc-code">startSize, endSize</code> (number): Size over lifetime</li>
+                <li><code class="doc-code">startColor, endColor</code> (table): {r,g,b,a} color over lifetime</li>
+                <li><code class="doc-code">shape</code> (string): "square", "circle", or "ring"</li>
+                <li><code class="doc-code">additive</code> (boolean): Additive blending for glowing effects</li>
+                <li><code class="doc-code">maxParticles</code> (number): Hard cap on alive particles (default: 5000)</li>
+                <li><code class="doc-code">preset</code> (string): Apply a built-in or custom preset</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-orange);">Built-in Presets:</strong> <code class="doc-code">"explosion"</code>, <code class="doc-code">"fire"</code>, <code class="doc-code">"smoke"</code>, <code class="doc-code">"rain"</code>, <code class="doc-code">"snow"</code>, <code class="doc-code">"magic"</code>, <code class="doc-code">"sparkle"</code>, <code class="doc-code">"confetti"</code></p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.update(id, dt)</code></h3>
+            <p class="doc-p">Updates the particle simulation. Call once per frame in <code class="doc-code">onUpdate()</code>.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.draw(id)</code></h3>
+            <p class="doc-p">Renders all alive particles. Call once per frame in <code class="doc-code">onDraw()</code>.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.destroy(id)</code></h3>
+            <p class="doc-p">Removes a particle system and frees its memory.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.burst(id, count)</code></h3>
+            <p class="doc-p">Instantly spawns <code class="doc-code">count</code> particles at the emitter position.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setPosition(id, x, y)</code></h3>
+            <p class="doc-p">Moves the emitter to a new position.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setEmitting(id, bool)</code></h3>
+            <p class="doc-p">Start or stop particle emission.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setRate(id, rate)</code></h3>
+            <p class="doc-p">Changes the emission rate at runtime.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.getCount(id)</code></h3>
+            <p class="doc-p">Returns the number of currently alive particles.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.clearAll()</code></h3>
+            <p class="doc-p">Destroys all active particle systems.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setGravity(id, gravity)</code></h3>
+            <p class="doc-p">Changes the gravity of a particle system at runtime.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setWind(id, x, y)</code></h3>
+            <p class="doc-p">Applies a constant wind force to all particles.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setBounce(id, enabled, bounceY, damping)</code></h3>
+            <p class="doc-p">Toggles ground bounce for particles.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.setLifetime(id, lifetime)</code></h3>
+            <p class="doc-p">Changes the lifetime for newly spawned particles.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.getConfig(id)</code></h3>
+            <p class="doc-p">Returns a table with the current configuration.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">particle.registerPreset(name, configFn)</code></h3>
+            <p class="doc-p">Register a custom preset that can be used with <code class="doc-code">preset = "name"</code>.</p>
+            <pre class="doc-pre"><code>particle.registerPreset("neon_burst", function(config)
+    return {
+        rate = 0, oneShot = true,
+        speedMin = 80, speedMax = 250,
+        spread = 360, lifetime = 1.2, gravity = 0, drag = 3,
+        startColor = {0, 255, 200, 255},
+        endColor = {0, 100, 255, 0},
+        additive = true, shape = "circle",
+        maxParticles = 400
+    }
+end)
+
+local neon = particle.create({ x = 400, y = 300, preset = "neon_burst" })
+particle.burst(neon, 300)</code></pre>
+
+            <h3 class="doc-h3">Particle Example</h3>
+            <pre class="doc-pre"><code>local fire, rain
+
+function onInit()
+    fire = particle.create({ x = 400, y = 300, preset = "fire" })
+    rain = particle.create({ x = 400, y = -10, preset = "rain" })
+end
+
+function onUpdate(dt)
+    particle.update(fire, dt)
+    particle.update(rain, dt)
+end
+
+function onDraw()
+    clearScreen(20, 20, 30)
+    particle.draw(fire)
+    particle.draw(rain)
+end</code></pre>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

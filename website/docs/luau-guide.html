@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luau Guide - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+                <a href="https://github.com/Super-Studio-Foundation/Like2D" target="_blank" class="btn btn-secondary">Source</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link active">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Luau Guide</h1>
+
+            <h2 class="doc-h2" id="what-is-luau">What is Luau?</h2>
+            <p class="doc-p">
+                Luau is a fast, small, safe, gradually typed embeddable scripting language derived from Lua. It's developed by Roblox and used in Like2D for game scripting.
+            </p>
+
+            <h2 class="doc-h2" id="getting-started-luau">Getting Started with Luau</h2>
+
+            <h3 class="doc-h3">Hello World</h3>
+            <pre class="doc-pre"><code>print("Hello, Like2D!")</code></pre>
+
+            <h3 class="doc-h3">Variables</h3>
+            <pre class="doc-pre"><code>-- Local variable (recommended)
+local x = 10
+
+-- Global variable
+y = 20
+
+-- Multiple assignment
+local a, b = 1, 2
+
+-- Type annotations (Luau feature)
+local name: string = "Player"
+local health: number = 100
+local isAlive: boolean = true</code></pre>
+
+            <h3 class="doc-h3">Data Types</h3>
+            <ul class="doc-ul">
+                <li><strong style="color: var(--color-kaplay-green);">nil</strong>: Represents no value</li>
+                <li><strong style="color: var(--color-kaplay-green);">boolean</strong>: true or false</li>
+                <li><strong style="color: var(--color-kaplay-green);">number</strong>: Double-precision floating point</li>
+                <li><strong style="color: var(--color-kaplay-green);">string</strong>: Text values</li>
+                <li><strong style="color: var(--color-kaplay-green);">function</strong>: Callable functions</li>
+                <li><strong style="color: var(--color-kaplay-green);">table</strong>: Associative arrays (objects, arrays, dictionaries)</li>
+            </ul>
+
+            <h3 class="doc-h3">Tables</h3>
+            <p class="doc-p">Tables are the only data structure in Luau. They can be used as arrays, dictionaries, or objects:</p>
+            
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">Array-style tables</h4>
+            <pre class="doc-pre"><code>local fruits = {"apple", "banana", "cherry"}
+print(fruits[1])  -- apple (indices start at 1!)</code></pre>
+
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">Dictionary-style tables</h4>
+            <pre class="doc-pre"><code>local player = {
+    name = "John",
+    health = 100,
+    x = 400,
+    y = 300
+}
+print(player.name)  -- John
+print(player.health)  -- 100</code></pre>
+
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">Object-oriented style</h4>
+            <pre class="doc-pre"><code>local Player = {}
+Player.__index = Player
+
+function Player.new(name, x, y)
+    local self = setmetatable({}, Player)
+    self.name = name
+    self.x = x
+    self.y = y
+    self.health = 100
+    return self
+end
+
+function Player:move(dx, dy)
+    self.x = self.x + dx
+    self.y = self.y + dy
+end
+
+function Player:takeDamage(amount)
+    self.health = self.health - amount
+end
+
+-- Usage
+local player1 = Player.new("Player1", 400, 300)
+player1:move(10, 0)
+player1:takeDamage(20)
+print(player1.health)  -- 80</code></pre>
+
+            <h3 class="doc-h3">Functions</h3>
+            <pre class="doc-pre"><code>-- Basic function
+function add(a, b)
+    return a + b
+end
+
+-- Local function (recommended)
+local function multiply(a, b)
+    return a * b
+end
+
+-- Multiple return values
+local function getNameAndAge()
+    return "Alice", 30
+end
+local name, age = getNameAndAge()
+
+-- Variable arguments
+local function sum(...)
+    local total = 0
+    for i, v in ipairs({...}) do
+        total = total + v
+    end
+    return total
+end
+print(sum(1, 2, 3, 4))  -- 10</code></pre>
+
+            <h3 class="doc-h3">Control Flow</h3>
+
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">If statements</h4>
+            <pre class="doc-pre"><code>local x = 10
+
+if x > 0 then
+    print("x is positive")
+elseif x < 0 then
+    print("x is negative")
+else
+    print("x is zero")
+end</code></pre>
+
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">For loops</h4>
+            <pre class="doc-pre"><code>-- Numeric for
+for i = 1, 10 do
+    print(i)
+end
+
+-- Numeric for with step
+for i = 10, 1, -1 do
+    print(i)
+end
+
+-- Generic for (ipairs for arrays)
+local fruits = {"apple", "banana", "cherry"}
+for i, fruit in ipairs(fruits) do
+    print(i, fruit)
+end
+
+-- Generic for (pairs for dictionaries)
+local player = {name = "John", health = 100}
+for key, value in pairs(player) do
+    print(key, value)
+end</code></pre>
+
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">While loops</h4>
+            <pre class="doc-pre"><code>local i = 1
+while i <= 10 do
+    print(i)
+    i = i + 1
+end</code></pre>
+
+            <h4 class="doc-h3" style="font-size: 18px; color: var(--color-kaplay-blue);">Repeat-until loops</h4>
+            <pre class="doc-pre"><code>local i = 1
+repeat
+    print(i)
+    i = i + 1
+until i > 10</code></pre>
+
+            <h3 class="doc-h3">String Manipulation</h3>
+            <pre class="doc-pre"><code>local str = "Hello, Like2D!"
+
+-- Length
+print(#str)  -- 14
+
+-- Concatenation
+local greeting = str .. " How are you?"
+
+-- String functions
+print(string.upper(str))  -- HELLO, LIKE2D!
+print(string.lower(str))  -- hello, like2d!
+print(string.sub(str, 1, 5))  -- Hello
+print(string.find(str, "Like2D"))  -- 8</code></pre>
+
+            <h3 class="doc-h3">Math Library</h3>
+            <pre class="doc-pre"><code>print(math.pi)  -- 3.14159...
+print(math.abs(-5))  -- 5
+print(math.floor(3.7))  -- 3
+print(math.ceil(3.2))  -- 4
+print(math.sqrt(16))  -- 4
+print(math.random())  -- Random number between 0 and 1
+print(math.random(1, 10))  -- Random integer between 1 and 10
+
+-- Set random seed
+math.randomseed(os.time())</code></pre>
+
+            <h3 class="doc-h3">Table Library</h3>
+            <pre class="doc-pre"><code>local t = {3, 1, 4, 1, 5}
+
+-- Insert
+table.insert(t, 6)  -- t becomes {3, 1, 4, 1, 5, 6}
+table.insert(t, 2, 9)  -- t becomes {3, 9, 1, 4, 1, 5, 6}
+
+-- Remove
+table.remove(t, 2)  -- t becomes {3, 1, 4, 1, 5, 6}
+
+-- Sort
+table.sort(t)  -- t becomes {1, 1, 3, 4, 5, 6}
+
+-- Get length
+print(#t)  -- 6</code></pre>
+
+            <h2 class="doc-h2" id="luau-in-like2d">Luau in Like2D</h2>
+            <p class="doc-p">In Like2D, you write your game logic in Luau. The framework provides callback functions that you implement and a special function for including other files:</p>
+
+            <h3 class="doc-h3">Including Other Files (<code class="doc-code">dofile</code>)</h3>
+            <p class="doc-p">To keep your project organized, you can split your code into multiple <code class="doc-code">.luau</code> files and include them using <code class="doc-code">dofile()</code> at the top of your <code class="doc-code">main.luau</code>:</p>
+            <pre class="doc-pre"><code>-- main.luau
+dofile("anim.luau")
+dofile("scripts/utils.luau")</code></pre>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-orange);">Note:</strong> This is much better than having a single 5,000-line file!</p>
+
+            <h3 class="doc-h3">Callback Functions</h3>
+            <p class="doc-p">Like2D calls these global functions automatically. Implement them in your <code class="doc-code">main.luau</code>:</p>
+            <pre class="doc-pre"><code>-- Called once at startup — load assets and set up state
+function onInit()
+    setWindowTitle("My Game")
+    setWindowSize(800, 600)
+    loadImage("assets/player.png")
+    loadSound("bgm", "assets/music.mp3")
+    playSound("bgm", true)
+end
+
+-- Called every frame BEFORE onDraw() — game logic, input, physics
+function onUpdate(dt)
+    -- dt = seconds since last frame (~0.016 at 60 FPS)
+    if isKeyDown("Right") then
+        playerX = playerX + 200 * dt
+    end
+end
+
+-- Called every frame for rendering — draw everything here
+function onDraw()
+    clearScreen(20, 20, 30)
+    renderImage("assets/player.png", playerX, playerY, 64, 64)
+    drawTextDirect("Score: " .. score, 10, 10, 24, 255, 255, 255, 255)
+end
+
+-- Called once when closing — cleanup and save
+function onCleanup()
+    unloadSound("bgm")
+    print("Game ended")
+end</code></pre>
+
+            <h2 class="doc-h2" id="best-practices">Best Practices</h2>
+            <ul class="doc-ul">
+                <li>Use <code class="doc-code">local</code> variables whenever possible (faster and safer)</li>
+                <li>Load assets in <code class="doc-code">onInit()</code>, never in <code class="doc-code">onDraw()</code> or <code class="doc-code">onUpdate()</code></li>
+                <li>Put game logic and input in <code class="doc-code">onUpdate(dt)</code>, rendering in <code class="doc-code">onDraw()</code></li>
+                <li>Use <code class="doc-code">dt</code> (delta time) for all movement to ensure smooth, frame-rate-independent gameplay</li>
+                <li>Unload sounds in <code class="doc-code">onCleanup()</code> to prevent memory leaks</li>
+                <li>Use meaningful variable and function names</li>
+                <li>Comment your code for clarity</li>
+                <li>Keep functions small and focused</li>
+                <li>Use tables to organize related data</li>
+            </ul>
+
+            <h2 class="doc-h2" id="learning-more">Learning More</h2>
+            <ul class="doc-ul">
+                <li><a href="https://luau-lang.org/" target="_blank" class="doc-link">Official Luau Documentation</a></li>
+                <li><a href="https://www.lua.org/manual/5.1/" target="_blank" class="doc-link">Lua 5.1 Manual</a> (Luau is compatible with Lua 5.1)</li>
+            </ul>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

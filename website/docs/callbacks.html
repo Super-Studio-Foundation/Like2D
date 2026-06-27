@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Loop & Window - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+                <a href="https://github.com/Super-Studio-Foundation/Like2D" target="_blank" class="btn btn-secondary">Source</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link active">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Game Loop & Window</h1>
+
+            <h2 class="doc-h2" id="game-loop-callbacks">Game Loop Callbacks</h2>
+            <p class="doc-p">Like2D calls these global functions automatically. Implement them in your <code class="doc-code">main.luau</code> to respond to engine events.</p>
+
+            <h3 class="doc-h3"><code class="doc-code">onInit()</code></h3>
+            <p class="doc-p">Called <strong>once</strong> when the application starts, before the first frame. Use this to set up the window, load assets, and initialize game state.</p>
+            <pre class="doc-pre"><code>function onInit()
+    setWindowTitle("My Game")
+    setWindowSize(800, 600)
+    loadImage("assets/player.png")
+    loadSound("bgm", "assets/music.mp3")
+    playSound("bgm", true)  -- loop background music
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">onUpdate(dt)</code></h3>
+            <p class="doc-p">Called <strong>every frame before onDraw()</strong>. Use this for game logic, physics, input handling, and AI. The <code class="doc-code">dt</code> parameter is delta time in seconds since the last frame (e.g. <code class="doc-code">0.016</code> at 60 FPS).</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">dt</code> (number): Time in seconds since last frame</li>
+            </ul>
+            <pre class="doc-pre"><code>function onUpdate(dt)
+    -- Move player using delta time for smooth frame-independent speed
+    if isKeyDown("Right") then
+        player.x = player.x + player.speed * dt
+    end
+    if isKeyDown("Space") and isGrounded then
+        player.vy = -400  -- jump impulse
+    end
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">onDraw()</code></h3>
+            <p class="doc-p">Called <strong>every frame after onUpdate()</strong>. Use this for all rendering: clear screen, draw images, primitives, and text. Do NOT put game logic here.</p>
+            <pre class="doc-pre"><code>function onDraw()
+    clearScreen(30, 30, 50)
+    renderImage("assets/player.png", player.x, player.y, 64, 64)
+    drawTextDirect("Score: " .. score, 10, 10, 24, 255, 255, 255, 255)
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">onCleanup()</code></h3>
+            <p class="doc-p">Called <strong>once</strong> when the application is closing. Use this for final cleanup, logging, or saving.</p>
+            <pre class="doc-pre"><code>function onCleanup()
+    print("Game shutting down...")
+end</code></pre>
+
+            <h2 class="doc-h2" id="window-management">Window Management Functions</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">setWindowTitle(title)</code></h3>
+            <p class="doc-p">Sets the window title text.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">title</code> (string): The new window title</li>
+            </ul>
+            <pre class="doc-pre"><code>setWindowTitle("My Awesome Game")</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">setWindowSize(width, height)</code></h3>
+            <p class="doc-p">Sets the window dimensions in pixels.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">width</code> (integer): Window width in pixels</li>
+                <li><code class="doc-code">height</code> (integer): Window height in pixels</li>
+            </ul>
+            <pre class="doc-pre"><code>setWindowSize(1024, 768)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">getWindowSize()</code></h3>
+            <p class="doc-p">Gets the current window dimensions.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">width</code> (integer): Current window width</li>
+                <li><code class="doc-code">height</code> (integer): Current window height</li>
+            </ul>
+            <pre class="doc-pre"><code>local w, h = getWindowSize()
+print("Window size: " .. w .. "x" .. h)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">setFullscreen(fullscreen)</code></h3>
+            <p class="doc-p">Toggles fullscreen mode.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">fullscreen</code> (boolean): true for fullscreen, false for windowed</li>
+            </ul>
+            <pre class="doc-pre"><code>setFullscreen(true)   -- Enable fullscreen
+setFullscreen(false)  -- Disable fullscreen</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">setEscapeQuits(boolean)</code></h3>
+            <p class="doc-p">Sets whether ESC key automatically quits the game. Default: true.</p>
+            <pre class="doc-pre"><code>setEscapeQuits(false)</code></pre>
+
+            <h2 class="doc-h2" id="letterboxing">Window Functions (Letterboxing)</h2>
+            <p class="doc-p">
+                Functions to manage aspect ratio scaling. Letterboxing ensures your game retains its original proportions (anti-stretch) with automatic black/colored bars on different monitor aspect ratios.
+            </p>
+
+            <h3 class="doc-h3"><code class="doc-code">setLogicalSize(width, height)</code></h3>
+            <p class="doc-p">Sets the fixed base internal resolution for your game mechanics and rendering coordinates.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">width</code> (integer): Target logical width (e.g., 800).</li>
+                <li><code class="doc-code">height</code> (integer): Target logical height (e.g., 600).</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">getLogicalSize()</code></h3>
+            <p class="doc-p">Retrieves the currently configured logical resolution.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">width</code> (integer), <code class="doc-code">height</code> (integer)</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">setUseLetterbox(use)</code></h3>
+            <p class="doc-p">Toggles the global letterbox scaling system state.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">use</code> (boolean): Set true to lock aspect ratio, or false to stretch visuals completely.</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">setLetterboxColor(red, green, blue)</code></h3>
+            <p class="doc-p">Changes the background color of the letterbox sidebars (Default color may vary due to memory buffer).</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">red</code>, <code class="doc-code">green</code>, <code class="doc-code">blue</code> (integer): RGB values ranging from 0 to 255.</li>
+            </ul>
+
+            <p class="doc-p"><strong style="color: var(--color-kaplay-pink);">Implementation Guide (onInit):</strong></p>
+            <pre class="doc-pre"><code>function onInit()
+    setWindowSize(1280, 720)       -- Physical Window Size
+    setLogicalSize(800, 600)       -- Game Canvas Size
+    setUseLetterbox(true)          -- Lock aspect ratio
+    setLetterboxColor(0, 0, 0)     -- Force clean cinematic black bars
+end</code></pre>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input & Time - Like2D</title>
+    <link rel="icon" href="../logo.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="doc-styles.css">
+</head>
+<body>
+    <header class="doc-header">
+        <div class="doc-header-content">
+            <div class="doc-logo-area">
+                <img src="../logo.ico" alt="Like2D Logo" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--color-border);">
+                <span class="doc-logo-text">Like2D</span>
+            </div>
+            <nav class="doc-nav">
+                <a href="../index.html" class="btn btn-secondary">Home</a>
+                <a href="index.html" class="btn btn-secondary">Docs</a>
+                <a href="https://github.com/Super-Studio-Foundation/Like2D" target="_blank" class="btn btn-secondary">Source</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="doc-layout">
+        <aside class="doc-sidebar">
+            <h3 class="doc-sidebar-title">Documentation</h3>
+            <nav class="doc-sidebar-nav">
+                <a href="index.html" class="doc-sidebar-link">Documentation</a>
+                <a href="getting-started.html" class="doc-sidebar-link">Getting Started</a>
+                <a href="callbacks.html" class="doc-sidebar-link">Game Loop & Window</a>
+                <a href="rendering.html" class="doc-sidebar-link">Rendering</a>
+                <a href="animation.html" class="doc-sidebar-link">Animation <span class="new-badge">NEW</span></a>
+                <a href="audio.html" class="doc-sidebar-link">Audio</a>
+                <a href="input.html" class="doc-sidebar-link active">Input & Time</a>
+                <a href="physics.html" class="doc-sidebar-link">Physics & Camera</a>
+                <a href="modules.html" class="doc-sidebar-link">Modules (net/json/tilemap/particle)</a>
+                <a href="advanced.html" class="doc-sidebar-link">Advanced (FS/Encrypt/Video)</a>
+                <a href="tutorials.html" class="doc-sidebar-link">Tutorials</a>
+                <a href="luau-guide.html" class="doc-sidebar-link">Luau Guide</a>
+            </nav>
+        </aside>
+
+        <main class="doc-content">
+            <a href="index.html" class="doc-back-btn btn btn-secondary">&larr; Back to Docs</a>
+            
+            <h1 class="doc-h1">Input & Time</h1>
+            <p class="doc-p">Functions for reading keyboard, mouse, and time values in Like2D.</p>
+
+            <h2 class="doc-h2" id="keyboard-input">Keyboard Input</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">isKeyDown(keyName)</code></h3>
+            <p class="doc-p">Checks if a specific key is currently held down.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">keyName</code> (string): Name of the key (e.g., "Escape", "Space", "W", "Left")</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">held</code> (boolean): true if key is held, false otherwise</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">isKeyJustPressed(keyName)</code></h3>
+            <p class="doc-p">Checks if a specific key was just pressed this frame.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">keyName</code> (string): Name of the key</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">pressed</code> (boolean): true if key was just pressed, false otherwise</li>
+            </ul>
+
+            <h3 class="doc-h3"><code class="doc-code">isKeyJustReleased(keyName)</code></h3>
+            <p class="doc-p">Checks if a specific key was just released this frame.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">keyName</code> (string): Name of the key</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">released</code> (boolean): true if key was just released, false otherwise</li>
+            </ul>
+
+            <p class="doc-p"><strong style="color: var(--color-kaplay-blue);">Example:</strong></p>
+            <pre class="doc-pre"><code>if isKeyJustPressed("Space") then
+    player.jump()
+end
+
+if isKeyDown("Right") then
+    player.x = player.x + 5
+end</code></pre>
+
+            <h2 class="doc-h2" id="mouse-input">Mouse Input</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">isMousePressed(button)</code></h3>
+            <p class="doc-p">Checks if a mouse button is currently held down.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-green);">Parameters:</strong></p>
+            <ul class="doc-ul">
+                <li><code class="doc-code">button</code> (integer): Button index &mdash; <code class="doc-code">0</code> = left click, <code class="doc-code">1</code> = right click, <code class="doc-code">2</code> = middle click</li>
+            </ul>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">held</code> (boolean)</p>
+            <pre class="doc-pre"><code>if isMousePressed(0) then
+    print("Left mouse button is held")
+end
+if isMousePressed(1) then
+    print("Right click held")
+end</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">getMousePos()</code></h3>
+            <p class="doc-p">Returns the current mouse cursor position in screen coordinates.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">x</code> (integer), <code class="doc-code">y</code> (integer)</p>
+            <pre class="doc-pre"><code>local mx, my = getMousePos()
+print("Mouse at: " .. mx .. ", " .. my)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">getMouseScroll()</code></h3>
+            <p class="doc-p">Returns the scroll wheel delta since the last frame. Horizontal scroll is <code class="doc-code">x</code>, vertical scroll is <code class="doc-code">y</code> (positive = scroll up/right, negative = scroll down/left).</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">x</code> (number), <code class="doc-code">y</code> (number)</p>
+            <pre class="doc-pre"><code>local sx, sy = getMouseScroll()
+if sy > 0 then
+    print("Scrolled up")
+elseif sy < 0 then
+    print("Scrolled down")
+end</code></pre>
+
+            <h2 class="doc-h2" id="time-functions">Time Functions</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">getDeltaTime()</code></h3>
+            <p class="doc-p">Returns the time elapsed since the last frame, in seconds. This is the most important function for smooth, frame-rate-independent game logic. At 60 FPS, this returns approximately <code class="doc-code">0.016</code>.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">dt</code> (number): Seconds since last frame</p>
+            <pre class="doc-pre"><code>local dt = getDeltaTime()
+-- Move at 200 pixels/second regardless of frame rate
+player.x = player.x + 200 * dt</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">getTime()</code></h3>
+            <p class="doc-p">Returns the total time in milliseconds since the application started. Useful for timing events, cooldowns, and animations.</p>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-purple);">Returns:</strong> <code class="doc-code">time</code> (integer): Milliseconds since start</p>
+            <pre class="doc-pre"><code>local start = getTime()
+-- ... do something ...
+local elapsed = getTime() - start
+print("Took " .. elapsed .. "ms")</code></pre>
+
+            <h2 class="doc-h2" id="utility-functions">Utility Functions</h2>
+
+            <h3 class="doc-h3"><code class="doc-code">print(message)</code></h3>
+            <p class="doc-p">Outputs a message to the console (debug mode only). Only works when running with <code class="doc-code">LikeC.exe</code>.</p>
+            <pre class="doc-pre"><code>print("Debug: Player position updated")
+print("Score: " .. score)</code></pre>
+
+            <h3 class="doc-h3"><code class="doc-code">dofile(filename)</code></h3>
+            <p class="doc-p">Loads and executes a Luau script file. Use this to split code across multiple files.</p>
+            <pre class="doc-pre"><code>-- In main.luau
+dofile("anim.luau")
+dofile("scripts/player.luau")
+
+function onInit()
+    anim_init() -- Function defined in anim.luau
+end</code></pre>
+
+            <h2 class="doc-h2" id="key-name-reference">Key Name Reference</h2>
+            <p class="doc-p">Use these string names with <code class="doc-code">isKeyDown()</code>, <code class="doc-code">isKeyJustPressed()</code>, and <code class="doc-code">isKeyJustReleased()</code>:</p>
+            <h3 class="doc-h3">Letters and Numbers</h3>
+            <pre class="doc-pre"><code>"a" through "z"   -- All 26 lowercase letters
+"0" through "9"   -- All 10 number keys</code></pre>
+            <h3 class="doc-h3">Special Keys</h3>
+            <pre class="doc-pre"><code>"Space", "Return", "Escape", "Tab", "Backspace", "Delete"
+"LShift", "RShift", "LCtrl", "RCtrl", "LAlt", "RAlt"
+"Home", "End", "PageUp", "PageDown", "Insert"
+"F1" through "F12"</code></pre>
+            <h3 class="doc-h3">Arrow Keys</h3>
+            <pre class="doc-pre"><code>"Up", "Down", "Left", "Right"</code></pre>
+            <p class="doc-p"><strong style="color: var(--color-kaplay-orange);">Note:</strong> Key names are case-sensitive strings. Use exactly the names shown above.</p>
+        </main>
+
+        <aside class="doc-toc" id="doc-toc"></aside>
+    </div>
+    <footer style="background-color: var(--color-bg-card); border-top: var(--border-width-thick) solid var(--color-border); padding: 32px; text-align: center; color: var(--color-text-muted); font-family: 'Fredoka', sans-serif;">
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <a href="../license.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">License</a>
+            <a href="../privacy-policy.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 Like2D. All rights reserved.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){var c=document.getElementById('doc-toc');if(!c)return;var hs=document.querySelectorAll('main .doc-h2[id]');if(!hs.length)return;var n=document.createElement('nav');n.className='doc-toc-nav';var t=document.createElement('div');t.className='doc-toc-title';t.textContent='On This Page';c.appendChild(t);hs.forEach(function(h){var a=document.createElement('a');a.className='doc-toc-link';a.href='#'+h.id;a.textContent=h.textContent.trim();n.appendChild(a)});c.appendChild(n);var ls=n.querySelectorAll('.doc-toc-link');window.addEventListener('scroll',function(){var cur='';hs.forEach(function(h){if(h.getBoundingClientRect().top<=100)cur=h.id});ls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})})});</script>
+</body>
+</html>
