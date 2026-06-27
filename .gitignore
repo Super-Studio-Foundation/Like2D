@@ -10,6 +10,7 @@ release/
 bin/
 obj/
 dist/
+external/
 cmake-build-*/
 CMakeCache.txt
 CMakeFiles/
