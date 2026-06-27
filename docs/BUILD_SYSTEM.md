@@ -14,8 +14,9 @@ The build creates two executables:
 - **MinGW-w64** with C++20 support
 - **Git** (optional)
 
-### Windows Environment
-- Windows 10 or later
+### Supported Platforms
+- **Windows** - Windows 10 or later (via build.bat or CMake)
+- **Linux** - Any modern distribution (via CMake)
 - PATH should include MinGW-w64 bin directory
 
 ## Quick Build
